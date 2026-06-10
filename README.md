@@ -1,14 +1,36 @@
-# PULSE
-Pulse
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-A cohort wellness dashboard for intern program managers, built on the Yerkes-Dodson performance-arousal framework.
+## Getting Started
 
-Pulse turns anonymous weekly check-ins into a live signal of whether your intern cohort is in flow, burning out, or coasting under-stimulated. It tracks 9 wellness dimensions — energy, stress, focus, motivation, recovery, wellbeing, social connection, challenge, and fatigue — and compresses them into a single g-score (g = performance / stress) that tells you at a glance whether your program design is working.
-How it works
-Interns submit a weekly check-in via Microsoft Forms. Responses sync automatically to SharePoint via Excel, which Pulse reads through the Microsoft Graph API and visualises on a manager dashboard — broken down by team, tracked across the program timeline.
+First, run the development server:
 
-Privacy model
-Interns submit anonymously. Only their team is recorded — no names, no individual tracking. The unit of analysis is always the cohort or team, never the person. This keeps the data honest and shifts the tool from performance monitoring to program stewardship.
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-Status
-Work in progress — currently in design phase.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
