@@ -13,6 +13,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import LoadingAnimation from "./LoadingAnimation";
 
 // ── Helpers ────────────────────────────────────────────────
 function ydY(x) {
@@ -73,7 +74,6 @@ export default function Dashboard() {
 
       if (error) {
         console.error("Supabase error:", error);
-        setLoading(false);
         return;
       }
 
@@ -110,7 +110,6 @@ export default function Dashboard() {
       }).sort((a, b) => b.overall - a.overall);
 
       setTeams(teamData);
-      setLoading(false);
     }
 
     fetchData();
@@ -165,15 +164,8 @@ export default function Dashboard() {
 
   // ── Loading state ─────────────────────────────────────────
   if (loading) {
-  return (
-    <div className="flex h-screen items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="w-8 h-8 rounded-full border-2 border-teal-500 border-t-transparent animate-spin mx-auto mb-3" />
-        <p className="text-sm text-gray-400">Loading Pulse data...</p>
-      </div>
-    </div>
-  );
-}
+  return <LoadingAnimation onDone={() => setLoading(false)} />;
+  }
 
 if (!loading && responses.length === 0) {
   return (
