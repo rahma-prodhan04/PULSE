@@ -210,18 +210,14 @@ export default function WeekView() {
           ))}
         </nav>
         <div className="px-5 py-4 border-t border-white/10">
-          <p className="text-[11px] mb-2" style={{ color: "#9FE1CB" }}>Jump to week</p>
-          <select
-            className="w-full text-xs rounded-lg px-2 py-1.5 bg-white/10 text-teal-100 border border-white/20"
-            value={week}
-            onChange={(e) => router.push(`/week/${e.target.value}`)}
-          >
-            {weeks.map(w => (
-              <option key={w} value={w} className="text-gray-800">Week {getWeekNumber(w)}</option>
-            ))}
-
-          </select>
+        <p className="text-[11px] mb-2" style={{ color: "#9FE1CB" }}>
+          Week {getWeekNumber(week)} of program
+        </p>
+        <div className="h-1 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-full rounded-full bg-teal-400"
+            style={{ width: `${Math.min((getWeekNumber(week) / 12) * 100, 100)}%` }} />
         </div>
+      </div>
       </aside>
 
       {/* Main */}
@@ -243,21 +239,28 @@ export default function WeekView() {
             </p>
           </div>
           <div className="flex items-center gap-2.5">
-            {weeks.map(w => (
-              <button
-                key={w}
-                onClick={() => router.push(`/week/${w}`)}
-                className={`text-xs px-4 py-1.5 rounded-full border transition-all ${
-                  w === week
-                    ? "text-white border-transparent"
-                    : "border-gray-200 text-gray-500 hover:bg-gray-50"
-                }`}
-                style={w === week ? { background: "#085041" } : {}}
-              >
+          <select
+            className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-600 bg-white"
+            value={week}
+            onChange={(e) => {
+              if (e.target.value === "all") router.push("/");
+              else router.push(`/week/${e.target.value}`);
+            }}
+          >
+            <option value="all">All weeks</option>
+            {weeks.map((w) => (
+              <option key={w} value={w}>
                 Week {getWeekNumber(w)}
-              </button>
+              </option>
             ))}
-          </div>
+          </select>
+          <button
+            className="text-xs px-4 py-1.5 rounded-full text-white"
+            style={{ background: "#085041" }}
+          >
+            Export
+          </button>
+        </div>
         </header>
 
         {/* Body */}

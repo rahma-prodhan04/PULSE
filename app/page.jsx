@@ -242,22 +242,21 @@ if (!loading && responses.length === 0) {
             </p>
           </div>
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2">
-            <button
-              className="text-xs px-4 py-1.5 rounded-full text-white border-transparent"
-              style={{ background: "#085041" }}
+            <div className="flex items-center gap-2.5">
+            <select
+              className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-600 bg-white"
+              defaultValue=""
+              onChange={(e) => {
+                if (e.target.value) router.push(`/week/${e.target.value}`);
+              }}
             >
-              All weeks
-            </button>
-            {trendData.map((t) => (
-              <button
-                key={t.week}
-                onClick={() => router.push(`/week/2026-${t.week}`)}
-                className="text-xs px-4 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50"
-              >
-                {t.week}
-              </button>
-            ))}
+              <option value="">All weeks</option>
+              {trendData.map((t, i) => (
+                <option key={t.week} value={`2026-${t.week}`}>
+                  Week {i + 3}
+                </option>
+              ))}
+            </select>
           </div>
             <button className="text-xs px-4 py-1.5 rounded-full text-white" style={{ background: "#085041" }}>
               Export
