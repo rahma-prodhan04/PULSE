@@ -281,10 +281,24 @@ if (!loading && responses.length === 0) {
                   <XAxis dataKey="x" type="number" domain={[0, 10]} tickCount={6} tick={{ fontSize: 11 }}
                     label={{ value: "Arousal level", position: "insideBottom", offset: -12, fontSize: 11, fill: "#9ca3af" }} />
                   <YAxis dataKey="y" type="number" domain={[0, 110]} hide />
-                  <Tooltip formatter={(v, n) => n === "y" ? null : [v, ""]} />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const d = payload[0].payload;
+                        if (d.name) return (
+                          <div className="bg-white border border-gray-100 rounded-lg px-3 py-2 shadow-sm text-xs">
+                            <p className="font-medium text-gray-800">{d.name}</p>
+                            <p className="text-gray-400 mt-0.5">Score: <span className="text-gray-700 font-medium">{d.g}</span></p>
+                            <p className="text-gray-400">Arousal: <span className="text-gray-700 font-medium">{d.x}</span></p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
                   <Scatter data={curveData} line={{ stroke: "#d1d5db", strokeWidth: 2 }} shape={() => <></>} />
                   <Scatter
-                    data={teams.map((t) => ({ x: t.arousal, y: t.perf, name: t.name }))}
+                    data={teams.map((t) => ({ x: t.arousal, y: t.perf, name: t.name, g: t.g }))}
                     fill="#1D9E75"
                     shape={(props) => {
                       const team = teams.find((t) => t.arousal === props.x);
