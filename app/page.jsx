@@ -356,8 +356,8 @@ export default function Dashboard() {
                     const d = payload[0].payload;
                     if (d.name) return (
                       <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
-                        <p style={{ fontWeight: 600, margin: "0 0 2px" }}>{d.name}</p>
-                        <p style={{ color: "#64748b", margin: 0 }}>Score: <b>{d.g}</b> · Arousal: <b>{d.x}</b></p>
+                        <p style={{ fontWeight: 600, margin: "0 0 2px", color: "#0f172a" }}>{d.name}</p>
+                        <p style={{ color: "#64748b", margin: 0 }}>Score: <b style={{ color: "#0f172a" }}>{d.g}</b> · Arousal: <b style={{ color: "#0f172a" }}>{d.x}</b></p>
                       </div>
                     );
                   }
