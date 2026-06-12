@@ -185,15 +185,15 @@ export default function Dashboard() {
           </div>
 
           {/* Middle row */}
-          <div className="grid gap-4" style={{ gridTemplateColumns: "1.8fr 1.1fr 1fr" }}>
+          <div className="grid gap-4" style={{ gridTemplateColumns: "1.8fr 1fr" }}>
 
             {/* Curve */}
             <div className="bg-white border border-gray-100 rounded-xl p-5">
               <p className="text-[11px] uppercase tracking-wider text-gray-400 mb-4">
                 Yerkes-Dodson curve — cohort position
               </p>
-              <ResponsiveContainer width="100%" height={220}>
-                <ScatterChart margin={{ top: 8, right: 8, bottom: 24, left: 0 }}>
+              <ResponsiveContainer width="100%" height={340}>
+                <ScatterChart margin={{ top: 20, right: 20, bottom: 24, left: 20 }}>
                   <XAxis dataKey="x" type="number" domain={[0, 10]} tickCount={6} tick={{ fontSize: 11 }}
                     label={{ value: "Arousal level", position: "insideBottom", offset: -12, fontSize: 11, fill: "#9ca3af" }} />
                   <YAxis dataKey="y" type="number" domain={[0, 110]} hide />
@@ -252,24 +252,9 @@ export default function Dashboard() {
                 })}
               </div>
             </div>
-
-            {/* Flags */}
-            <div className="bg-white border border-gray-100 rounded-xl p-5">
-              <p className="text-[11px] uppercase tracking-wider text-gray-400 mb-4">Key insights</p>
-              <div className="flex flex-col">
-                {flags.map((f) => (
-                  <div key={f.team} className="flex gap-3 py-3 border-b border-gray-50 last:border-0">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-sm"
-                      style={{ background: f.bg, color: f.iconColor }}>{f.icon}</div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{f.team}</p>
-                      <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{f.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
+
+
 
           {/* Bottom row */}
           <div className="grid grid-cols-2 gap-4">
