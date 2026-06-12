@@ -15,6 +15,17 @@ import {
   Cell,
 } from "recharts";
 
+function getWeekNumber(dateStr) {
+  const dates = ["2026-06-01", "2026-06-08", "2026-06-15", "2026-06-22", "2026-06-29"];
+  const idx = dates.indexOf(dateStr);
+  if (idx !== -1) return idx + 3; // starts at week 3
+  // fallback — calculate from first week
+  const start = new Date("2026-06-01");
+  const current = new Date(dateStr);
+  const diff = Math.round((current - start) / (7 * 24 * 60 * 60 * 1000));
+  return diff + 3;
+}
+
 function ydY(x) {
   return 100 * Math.exp(-0.5 * Math.pow((x - 5.5) / 2.2, 2));
 }
@@ -206,8 +217,9 @@ export default function WeekView() {
             onChange={(e) => router.push(`/week/${e.target.value}`)}
           >
             {weeks.map(w => (
-              <option key={w} value={w} className="text-gray-800">{w}</option>
+              <option key={w} value={w} className="text-gray-800">Week {getWeekNumber(w)}</option>
             ))}
+
           </select>
         </div>
       </aside>
@@ -224,7 +236,7 @@ export default function WeekView() {
                 ← Overview
               </button>
               <span className="text-gray-200">/</span>
-              <h1 className="text-base font-medium text-gray-900">Week of {week}</h1>
+              <h1 className="text-base font-medium text-gray-900">Week {getWeekNumber(week)}</h1>
             </div>
             <p className="text-xs text-gray-400 mt-0.5">
               {responses.length} responses · {teams.length} teams
@@ -242,7 +254,7 @@ export default function WeekView() {
                 }`}
                 style={w === week ? { background: "#085041" } : {}}
               >
-                {w.slice(5)}
+                Week {getWeekNumber(w)}
               </button>
             ))}
           </div>
@@ -273,7 +285,7 @@ export default function WeekView() {
             {/* Curve */}
             <div className="bg-white border border-gray-100 rounded-xl p-5">
               <p className="text-[11px] uppercase tracking-wider text-gray-400 mb-4">
-                Yerkes-Dodson curve — week of {week}
+                Yerkes-Dodson curve — Week {getWeekNumber(week)}
               </p>
               <ResponsiveContainer width="100%" height={280}>
                 <ScatterChart margin={{ top: 20, right: 20, bottom: 24, left: 20 }}>
