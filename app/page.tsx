@@ -16,18 +16,36 @@ function ydY(x) {
   return 100 * Math.exp(-0.5 * Math.pow((x - 5.5) / 2.2, 2));
 }
 
+function getZoneColor(arousal) {
+  if (arousal >= 4 && arousal <= 6) return "#1D9E75";
+  if ((arousal >= 2 && arousal < 4) || (arousal > 6 && arousal <= 8)) return "#EF9F27";
+  return "#E24B4A";
+}
+
+function getZoneBadge(arousal) {
+  if (arousal >= 4 && arousal <= 6) return { bg: "#E1F5EE", text: "#085041", label: "Optimal" };
+  if ((arousal >= 2 && arousal < 4) || (arousal > 6 && arousal <= 8)) return { bg: "#FAEEDA", text: "#854F0B", label: "Caution" };
+  return { bg: "#FCEBEB", text: "#791F1F", label: "Risk" };
+}
+
+function getDimColor(v) {
+  if (v >= 4 && v <= 6) return "#1D9E75";
+  if ((v >= 2 && v < 4) || (v > 6 && v <= 8)) return "#EF9F27";
+  return "#E24B4A";
+}
+
 const teams = [
-  { name: "Claroe",      arousal: 6.57, g: 6.24, zone: "optimal" },
-  { name: "WHC",         arousal: 5.82, g: 6.10, zone: "optimal" },
-  { name: "RNSH1",       arousal: 5.62, g: 5.70, zone: "optimal" },
-  { name: "Rockfield",   arousal: 5.46, g: 5.66, zone: "optimal" },
-  { name: "NSWRA",       arousal: 5.56, g: 5.56, zone: "optimal" },
-  { name: "DCPM",        arousal: 5.36, g: 5.38, zone: "optimal" },
-  { name: "Tweed S",     arousal: 5.14, g: 5.35, zone: "optimal" },
-  { name: "RNSH2",       arousal: 5.18, g: 5.26, zone: "optimal" },
-  { name: "Sensear",     arousal: 5.12, g: 5.09, zone: "low"     },
-  { name: "IPWEA",       arousal: 4.71, g: 4.92, zone: "low"     },
-  { name: "Sailability", arousal: 4.65, g: 4.87, zone: "low"     },
+  { name: "Claroe",      arousal: 6.57, g: 6.24 },
+  { name: "WHC",         arousal: 5.82, g: 6.10 },
+  { name: "RNSH1",       arousal: 5.62, g: 5.70 },
+  { name: "Rockfield",   arousal: 5.46, g: 5.66 },
+  { name: "NSWRA",       arousal: 5.56, g: 5.56 },
+  { name: "DCPM",        arousal: 5.36, g: 5.38 },
+  { name: "Tweed S",     arousal: 5.14, g: 5.35 },
+  { name: "RNSH2",       arousal: 5.18, g: 5.26 },
+  { name: "Sensear",     arousal: 5.12, g: 5.09 },
+  { name: "IPWEA",       arousal: 4.71, g: 4.92 },
+  { name: "Sailability", arousal: 4.65, g: 4.87 },
 ].map(t => ({ ...t, perf: ydY(t.arousal) }));
 
 const teamDimensions = {
@@ -45,11 +63,11 @@ const teamDimensions = {
 };
 
 const cohortDimensions = [
-  { label: "Social",    value: 5.76, color: "#1D9E75" },
-  { label: "Workload",  value: 5.54, color: "#1D9E75" },
-  { label: "Motivation",value: 5.32, color: "#EF9F27" },
-  { label: "Energy",    value: 5.42, color: "#EF9F27" },
-  { label: "Recovery",  value: 5.07, color: "#E24B4A" },
+  { label: "Social",     value: 5.76 },
+  { label: "Workload",   value: 5.54 },
+  { label: "Energy",     value: 5.42 },
+  { label: "Motivation", value: 5.32 },
+  { label: "Recovery",   value: 5.07 },
 ];
 
 const trendData = [
@@ -58,35 +76,22 @@ const trendData = [
 ];
 
 const flags = [
-  { team: "Sensear",    desc: "Lowest overall score at 5.09. Recovery at 3.9 is the weakest across all teams.", bg: "#FCEBEB", icon: "⚠", iconColor: "#A32D2D" },
-  { team: "Recovery",   desc: "Cohort-wide concern at 5.07 avg — lowest dimension across all teams.", bg: "#FAEEDA", icon: "↓", iconColor: "#854F0B" },
-  { team: "WHC",        desc: "Strongest social score at 8.2 — highest in the cohort. Good benchmark.", bg: "#E1F5EE", icon: "★", iconColor: "#085041" },
-  { team: "Social",     desc: "Cohort-wide score of 5.76 shows interns feel connected — a strong buffer against burnout.", bg: "#E1F5EE", icon: "↑", iconColor: "#085041" },
+  { team: "Sensear",  desc: "Lowest overall score at 5.09. Recovery at 3.9 is the weakest across all teams.", bg: "#FCEBEB", icon: "⚠", iconColor: "#A32D2D" },
+  { team: "Recovery", desc: "Cohort-wide concern at 5.07 avg — lowest dimension across all teams.", bg: "#FAEEDA", icon: "↓", iconColor: "#854F0B" },
+  { team: "WHC",      desc: "Strongest social score at 8.2 — highest in the cohort. Good benchmark.", bg: "#E1F5EE", icon: "★", iconColor: "#085041" },
+  { team: "Social",   desc: "Cohort-wide score of 5.76 shows interns feel connected — a strong buffer against burnout.", bg: "#E1F5EE", icon: "↑", iconColor: "#085041" },
 ];
-
-const zoneColor = { optimal: "#1D9E75", low: "#378ADD", high: "#E24B4A" };
-const zoneBadge = {
-  optimal: { bg: "#E1F5EE", text: "#085041", label: "Good" },
-  low:     { bg: "#E6F1FB", text: "#185FA5", label: "Low"  },
-  high:    { bg: "#FCEBEB", text: "#791F1F", label: "Risk" },
-};
 
 const curveData = Array.from({ length: 101 }, (_, i) => ({
   x: parseFloat((i / 10).toFixed(1)),
   y: parseFloat(ydY(i / 10).toFixed(1)),
 }));
 
-function getDimColor(v) {
-  if (v >= 6.5) return "#1D9E75";
-  if (v >= 5.5) return "#EF9F27";
-  return "#E24B4A";
-}
-
 export default function Dashboard() {
   const [selectedTeam, setSelectedTeam] = useState("Cohort average");
 
   const activeDimensions = selectedTeam === "Cohort average"
-    ? cohortDimensions
+    ? cohortDimensions.map(d => ({ ...d, color: getDimColor(d.value) }))
     : Object.entries(teamDimensions[selectedTeam] || {}).map(([key, value]) => ({
         label: key.charAt(0).toUpperCase() + key.slice(1),
         value,
@@ -166,10 +171,10 @@ export default function Dashboard() {
           {/* Metric cards */}
           <div className="grid grid-cols-4 gap-4">
             {[
-              { label: "Cohort avg score", value: "5.4",  sub: "Across all 5 dimensions",    valueColor: "#085041", subColor: "#0F6E56" },
-              { label: "Strongest signal", value: "Social", sub: "5.76 avg — connection high", valueColor: "#1D9E75", subColor: "" },
-              { label: "Weakest signal",   value: "Recovery", sub: "5.07 avg — needs attention", valueColor: "#A32D2D", subColor: "#A32D2D" },
-              { label: "Total responses",  value: "107",  sub: "11 teams participated",       valueColor: "",       subColor: "" },
+              { label: "Cohort avg score", value: "5.4",      sub: "Across all 5 dimensions",       valueColor: "#085041", subColor: "#0F6E56" },
+              { label: "Strongest signal", value: "Social",   sub: "5.76 avg — connection high",    valueColor: "#1D9E75", subColor: "" },
+              { label: "Weakest signal",   value: "Recovery", sub: "5.07 avg — needs attention",    valueColor: "#A32D2D", subColor: "#A32D2D" },
+              { label: "Total responses",  value: "107",      sub: "11 teams participated",         valueColor: "",       subColor: "" },
             ].map((m) => (
               <div key={m.label} className="bg-white border border-gray-100 rounded-xl p-5">
                 <p className="text-[11px] uppercase tracking-wider text-gray-400 mb-2">{m.label}</p>
@@ -200,16 +205,22 @@ export default function Dashboard() {
                     shape={(props) => {
                       const team = teams.find((t) => t.arousal === props.x);
                       return (
-                        <circle cx={props.cx} cy={props.cy} r={7}
-                          fill={team ? zoneColor[team.zone] : "#1D9E75"}
-                          stroke="#fff" strokeWidth={2} />
+                        <circle
+                          cx={props.cx} cy={props.cy} r={7}
+                          fill={team ? getZoneColor(team.arousal) : "#1D9E75"}
+                          stroke="#fff" strokeWidth={2}
+                        />
                       );
                     }}
                   />
                 </ScatterChart>
               </ResponsiveContainer>
               <div className="flex gap-5 mt-2">
-                {[["#1D9E75","Optimal"],["#E24B4A","High arousal"],["#378ADD","Low arousal"]].map(([c, l]) => (
+                {[
+                  ["#1D9E75", "Optimal (4–6)"],
+                  ["#EF9F27", "Caution (2–4, 6–8)"],
+                  ["#E24B4A", "Risk (1–2, 9–10)"],
+                ].map(([c, l]) => (
                   <span key={l} className="flex items-center gap-1.5 text-xs text-gray-400">
                     <span className="w-2 h-2 rounded-full inline-block" style={{ background: c }} />{l}
                   </span>
@@ -221,20 +232,24 @@ export default function Dashboard() {
             <div className="bg-white border border-gray-100 rounded-xl p-5">
               <p className="text-[11px] uppercase tracking-wider text-gray-400 mb-4">Team overall scores</p>
               <div className="flex flex-col">
-                {teams.map((t) => (
-                  <div key={t.name} className="flex items-center gap-2.5 py-2 border-b border-gray-50 last:border-0">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: zoneColor[t.zone] }} />
-                    <span className="text-sm text-gray-800 flex-1">{t.name}</span>
-                    <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${(t.g / 10) * 100}%`, background: zoneColor[t.zone] }} />
+                {teams.map((t) => {
+                  const badge = getZoneBadge(t.arousal);
+                  const color = getZoneColor(t.arousal);
+                  return (
+                    <div key={t.name} className="flex items-center gap-2.5 py-2 border-b border-gray-50 last:border-0">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+                      <span className="text-sm text-gray-800 flex-1">{t.name}</span>
+                      <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${(t.g / 10) * 100}%`, background: color }} />
+                      </div>
+                      <span className="text-sm font-medium text-gray-800 w-7 text-right">{t.g}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                        style={{ background: badge.bg, color: badge.text }}>
+                        {t.name === "Claroe" ? "Top" : badge.label}
+                      </span>
                     </div>
-                    <span className="text-sm font-medium text-gray-800 w-7 text-right">{t.g}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-                      style={{ background: zoneBadge[t.zone].bg, color: zoneBadge[t.zone].text }}>
-                      {t.name === "Claroe" ? "Top" : zoneBadge[t.zone].label}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
