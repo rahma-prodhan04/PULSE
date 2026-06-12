@@ -16,13 +16,9 @@ import {
 } from "recharts";
 
 function getWeekNumber(dateStr) {
-  const dates = ["2026-06-01", "2026-06-08", "2026-06-15", "2026-06-22", "2026-06-29"];
-  const idx = dates.indexOf(dateStr);
-  if (idx !== -1) return idx + 3; // starts at week 3
-  // fallback — calculate from first week
-  const start = new Date("2026-06-01");
+  const programStart = new Date("2026-06-01");
   const current = new Date(dateStr);
-  const diff = Math.round((current - start) / (7 * 24 * 60 * 60 * 1000));
+  const diff = Math.round((current - programStart) / (7 * 24 * 60 * 60 * 1000));
   return diff + 3;
 }
 
