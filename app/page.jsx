@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 import {
   ScatterChart,
   Scatter,
@@ -10,8 +12,8 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { useState } from "react";
 
+// ── Helpers ────────────────────────────────────────────────
 function ydY(x) {
   return 100 * Math.exp(-0.5 * Math.pow((x - 5.5) / 2.2, 2));
 }
@@ -34,70 +36,156 @@ function getDimColor(v) {
   return "#E24B4A";
 }
 
-const teams = [
-  { name: "Claroe",      arousal: 6.57, g: 6.24 },
-  { name: "WHC",         arousal: 5.82, g: 6.10 },
-  { name: "RNSH1",       arousal: 5.62, g: 5.70 },
-  { name: "Rockfield",   arousal: 5.46, g: 5.66 },
-  { name: "NSWRA",       arousal: 5.56, g: 5.56 },
-  { name: "DCPM",        arousal: 5.36, g: 5.38 },
-  { name: "Tweed S",     arousal: 5.14, g: 5.35 },
-  { name: "RNSH2",       arousal: 5.18, g: 5.26 },
-  { name: "Sensear",     arousal: 5.12, g: 5.09 },
-  { name: "IPWEA",       arousal: 4.71, g: 4.92 },
-  { name: "Sailability", arousal: 4.65, g: 4.87 },
-].map(t => ({ ...t, perf: ydY(t.arousal) }));
-
-const teamDimensions = {
-  "Claroe":      { workload: 7.5, energy: 6.2, recovery: 5.8, motivation: 6.0, social: 4.5 },
-  "WHC":         { workload: 6.0, energy: 5.8, recovery: 4.8, motivation: 6.6, social: 8.2 },
-  "RNSH1":       { workload: 5.7, energy: 5.7, recovery: 5.7, motivation: 5.7, social: 5.7 },
-  "Rockfield":   { workload: 6.2, energy: 5.5, recovery: 4.5, motivation: 5.5, social: 6.5 },
-  "NSWRA":       { workload: 6.0, energy: 4.8, recovery: 5.5, motivation: 5.5, social: 6.0 },
-  "DCPM":        { workload: 6.0, energy: 5.3, recovery: 4.8, motivation: 5.2, social: 5.8 },
-  "Tweed S":     { workload: 6.0, energy: 5.4, recovery: 5.3, motivation: 4.9, social: 7.0 },
-  "RNSH2":       { workload: 6.3, energy: 4.7, recovery: 5.3, motivation: 5.7, social: 6.3 },
-  "Sensear":     { workload: 5.1, energy: 5.4, recovery: 3.9, motivation: 4.9, social: 5.3 },
-  "IPWEA":       { workload: 4.7, energy: 5.3, recovery: 4.5, motivation: 5.0, social: 6.5 },
-  "Sailability": { workload: 5.3, energy: 4.1, recovery: 5.4, motivation: 4.6, social: 6.7 },
-};
-
-const cohortDimensions = [
-  { label: "Social",     value: 5.76 },
-  { label: "Workload",   value: 5.54 },
-  { label: "Energy",     value: 5.42 },
-  { label: "Motivation", value: 5.32 },
-  { label: "Recovery",   value: 5.07 },
-];
-
-const trendData = [
-  { week: "Wk 1 (Jun 1)", g: 5.53 },
-  { week: "Wk 2 (Jun 8)", g: 5.31 },
-];
-
-const flags = [
-  { team: "Sensear",  desc: "Lowest overall score at 5.09. Recovery at 3.9 is the weakest across all teams.", bg: "#FCEBEB", icon: "⚠", iconColor: "#A32D2D" },
-  { team: "Recovery", desc: "Cohort-wide concern at 5.07 avg — lowest dimension across all teams.", bg: "#FAEEDA", icon: "↓", iconColor: "#854F0B" },
-  { team: "WHC",      desc: "Strongest social score at 8.2 — highest in the cohort. Good benchmark.", bg: "#E1F5EE", icon: "★", iconColor: "#085041" },
-  { team: "Social",   desc: "Cohort-wide score of 5.76 shows interns feel connected — a strong buffer against burnout.", bg: "#E1F5EE", icon: "↑", iconColor: "#085041" },
-];
+function avg(arr) {
+  if (!arr.length) return 0;
+  return parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2));
+}
 
 const curveData = Array.from({ length: 101 }, (_, i) => ({
   x: parseFloat((i / 10).toFixed(1)),
   y: parseFloat(ydY(i / 10).toFixed(1)),
 }));
 
+// ── Main component ─────────────────────────────────────────
 export default function Dashboard() {
+  const [loading, setLoading] = useState(true);
+  const [responses, setResponses] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState("Cohort average");
 
-  const activeDimensions = selectedTeam === "Cohort average"
-    ? cohortDimensions.map(d => ({ ...d, color: getDimColor(d.value) }))
-    : Object.entries(teamDimensions[selectedTeam] || {}).map(([key, value]) => ({
-        label: key.charAt(0).toUpperCase() + key.slice(1),
-        value,
-        color: getDimColor(value),
-      }));
+  useEffect(() => {
+    async function fetchData() {
+      // Fetch all survey responses with team info
+      const { data, error } = await supabase
+        .from("survey_responses")
+        .select(`
+          q1_workload,
+          q2_energy,
+          q3_recovery,
+          q4_motivation,
+          q5_social,
+          week_start,
+          team_id,
+          teams ( name )
+        `);
 
+      if (error) {
+        console.error("Supabase error:", error);
+        setLoading(false);
+        return;
+      }
+
+      setResponses(data);
+
+      // Group by team and calculate averages
+      const teamMap = {};
+      data.forEach((r) => {
+        const name = r.teams?.name || "Unknown";
+        if (!teamMap[name]) teamMap[name] = { workload: [], energy: [], recovery: [], motivation: [], social: [] };
+        teamMap[name].workload.push(r.q1_workload);
+        teamMap[name].energy.push(r.q2_energy);
+        teamMap[name].recovery.push(r.q3_recovery);
+        teamMap[name].motivation.push(r.q4_motivation);
+        teamMap[name].social.push(r.q5_social);
+      });
+
+      const teamData = Object.entries(teamMap).map(([name, dims]) => {
+        const workload  = avg(dims.workload);
+        const energy    = avg(dims.energy);
+        const recovery  = avg(dims.recovery);
+        const motivation = avg(dims.motivation);
+        const social    = avg(dims.social);
+        const overall   = avg([workload, energy, recovery, motivation, social]);
+        const arousal   = avg([workload, energy, recovery, motivation]);
+        return {
+          name,
+          workload, energy, recovery, motivation, social,
+          overall,
+          arousal,
+          g: overall,
+          perf: ydY(arousal),
+        };
+      }).sort((a, b) => b.overall - a.overall);
+
+      setTeams(teamData);
+      setLoading(false);
+    }
+
+    fetchData();
+  }, []);
+
+  // ── Derived cohort stats ──────────────────────────────────
+  const cohortAvg = teams.length
+    ? avg(teams.map(t => t.overall))
+    : 0;
+
+  const cohortDimensions = teams.length ? [
+    { label: "Social",     value: avg(teams.map(t => t.social)) },
+    { label: "Workload",   value: avg(teams.map(t => t.workload)) },
+    { label: "Energy",     value: avg(teams.map(t => t.energy)) },
+    { label: "Motivation", value: avg(teams.map(t => t.motivation)) },
+    { label: "Recovery",   value: avg(teams.map(t => t.recovery)) },
+  ].map(d => ({ ...d, color: getDimColor(d.value) })) : [];
+
+  const strongestDim = cohortDimensions.length
+    ? [...cohortDimensions].sort((a, b) => b.value - a.value)[0]
+    : null;
+
+  const weakestDim = cohortDimensions.length
+    ? [...cohortDimensions].sort((a, b) => a.value - b.value)[0]
+    : null;
+
+  // ── Trend by week ─────────────────────────────────────────
+  const trendData = Object.entries(
+    responses.reduce((acc, r) => {
+      const wk = r.week_start;
+      if (!acc[wk]) acc[wk] = [];
+      acc[wk].push(avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation, r.q5_social]));
+      return acc;
+    }, {})
+  )
+    .sort(([a], [b]) => new Date(a) - new Date(b))
+    .map(([week, vals]) => ({ week: week.slice(5), g: avg(vals) }));
+
+  // ── Active dimensions for dropdown ───────────────────────
+  const selectedTeamData = teams.find(t => t.name === selectedTeam);
+  const activeDimensions = selectedTeam === "Cohort average"
+    ? cohortDimensions
+    : selectedTeamData
+      ? [
+          { label: "Social",     value: selectedTeamData.social },
+          { label: "Workload",   value: selectedTeamData.workload },
+          { label: "Energy",     value: selectedTeamData.energy },
+          { label: "Motivation", value: selectedTeamData.motivation },
+          { label: "Recovery",   value: selectedTeamData.recovery },
+        ].map(d => ({ ...d, color: getDimColor(d.value) }))
+      : [];
+
+  // ── Loading state ─────────────────────────────────────────
+  if (loading) {
+  return (
+    <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="w-8 h-8 rounded-full border-2 border-teal-500 border-t-transparent animate-spin mx-auto mb-3" />
+        <p className="text-sm text-gray-400">Loading Pulse data...</p>
+      </div>
+    </div>
+  );
+}
+
+if (!loading && responses.length === 0) {
+  return (
+    <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="text-4xl mb-4">📭</div>
+        <p className="text-base font-medium text-gray-700">No responses yet</p>
+        <p className="text-sm text-gray-400 mt-1">Once interns submit their check-ins, data will appear here.</p>
+      </div>
+    </div>
+  );
+}
+
+  // ── Render ────────────────────────────────────────────────
   return (
     <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
 
@@ -123,23 +211,19 @@ export default function Dashboard() {
               }`}
             >
               {item}
-              {item === "Flags" && (
-                <span className="ml-auto text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full">
-                  2
-                </span>
-              )}
             </button>
           ))}
         </nav>
         <div className="px-5 py-4 border-t border-white/10">
           <p className="text-[11px] mb-2" style={{ color: "#9FE1CB" }}>
-            2 weeks collected
+            {trendData.length} weeks collected
           </p>
           <div className="h-1 rounded-full bg-white/10 overflow-hidden">
-            <div className="h-full w-[17%] rounded-full bg-teal-400" />
+            <div className="h-full rounded-full bg-teal-400"
+              style={{ width: `${Math.min((trendData.length / 12) * 100, 100)}%` }} />
           </div>
           <p className="text-[10px] mt-1.5" style={{ color: "#5DCAA5" }}>
-            Jun 1 — Jun 12
+            {trendData.length > 0 ? `${trendData[0].week} — ${trendData[trendData.length - 1].week}` : "No data yet"}
           </p>
         </div>
       </aside>
@@ -152,7 +236,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-base font-medium text-gray-900">Overview</h1>
             <p className="text-xs text-gray-400 mt-0.5">
-              107 responses · 11 teams · last check-in Jun 12
+              {responses.length} responses · {teams.length} teams · all weeks
             </p>
           </div>
           <div className="flex items-center gap-2.5">
@@ -171,10 +255,10 @@ export default function Dashboard() {
           {/* Metric cards */}
           <div className="grid grid-cols-4 gap-4">
             {[
-              { label: "Cohort avg score", value: "5.4",      sub: "Across all 5 dimensions",       valueColor: "#085041", subColor: "#0F6E56" },
-              { label: "Strongest signal", value: "Social",   sub: "5.76 avg — connection high",    valueColor: "#1D9E75", subColor: "" },
-              { label: "Weakest signal",   value: "Recovery", sub: "5.07 avg — needs attention",    valueColor: "#A32D2D", subColor: "#A32D2D" },
-              { label: "Total responses",  value: "107",      sub: "11 teams participated",         valueColor: "",       subColor: "" },
+              { label: "Cohort avg score", value: cohortAvg.toFixed(1),        sub: "Across all dimensions",          valueColor: "#085041", subColor: "#0F6E56" },
+              { label: "Strongest signal", value: strongestDim?.label || "—",  sub: `${strongestDim?.value ?? "—"} avg`, valueColor: "#1D9E75", subColor: "" },
+              { label: "Weakest signal",   value: weakestDim?.label || "—",    sub: `${weakestDim?.value ?? "—"} avg — needs attention`, valueColor: "#A32D2D", subColor: "#A32D2D" },
+              { label: "Total responses",  value: responses.length.toString(), sub: `${teams.length} teams participated`, valueColor: "", subColor: "" },
             ].map((m) => (
               <div key={m.label} className="bg-white border border-gray-100 rounded-xl p-5">
                 <p className="text-[11px] uppercase tracking-wider text-gray-400 mb-2">{m.label}</p>
@@ -205,11 +289,9 @@ export default function Dashboard() {
                     shape={(props) => {
                       const team = teams.find((t) => t.arousal === props.x);
                       return (
-                        <circle
-                          cx={props.cx} cy={props.cy} r={7}
+                        <circle cx={props.cx} cy={props.cy} r={7}
                           fill={team ? getZoneColor(team.arousal) : "#1D9E75"}
-                          stroke="#fff" strokeWidth={2}
-                        />
+                          stroke="#fff" strokeWidth={2} />
                       );
                     }}
                   />
@@ -232,7 +314,7 @@ export default function Dashboard() {
             <div className="bg-white border border-gray-100 rounded-xl p-5">
               <p className="text-[11px] uppercase tracking-wider text-gray-400 mb-4">Team overall scores</p>
               <div className="flex flex-col">
-                {teams.map((t) => {
+                {teams.map((t, i) => {
                   const badge = getZoneBadge(t.arousal);
                   const color = getZoneColor(t.arousal);
                   return (
@@ -240,12 +322,12 @@ export default function Dashboard() {
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
                       <span className="text-sm text-gray-800 flex-1">{t.name}</span>
                       <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${(t.g / 10) * 100}%`, background: color }} />
+                        <div className="h-full rounded-full" style={{ width: `${(t.overall / 10) * 100}%`, background: color }} />
                       </div>
-                      <span className="text-sm font-medium text-gray-800 w-7 text-right">{t.g}</span>
+                      <span className="text-sm font-medium text-gray-800 w-7 text-right">{t.overall}</span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
                         style={{ background: badge.bg, color: badge.text }}>
-                        {t.name === "Claroe" ? "Top" : badge.label}
+                        {i === 0 ? "Top" : badge.label}
                       </span>
                     </div>
                   );
@@ -253,8 +335,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
-
 
           {/* Bottom row */}
           <div className="grid grid-cols-2 gap-4">
