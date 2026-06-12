@@ -10,7 +10,7 @@ import {
 import LoadingAnimation from "./LoadingAnimation";
 
 function ydY(x) {
-  return 100 * Math.exp(-0.5 * Math.pow((x - 5.5) / 2.2, 2));
+  return 100 * Math.exp(-0.5 * Math.pow((x - 5) / 2.2, 2));
 }
 
 function getZoneColor(arousal) {
@@ -232,7 +232,7 @@ export default function Dashboard() {
         <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 32, height: 32, background: "#22c55e", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#0a2818", flexShrink: 0 }}>N</div>
           <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 13, fontWeight: 500, color: "#fff", margin: 0 }}>Nina</p>
+            <p style={{ fontSize: 13, fontWeight: 500, color: "#fff", margin: 0 }}>Osman</p>
             <p style={{ fontSize: 11, color: "rgba(134,239,172,0.5)", margin: 0 }}>Admin</p>
           </div>
           <span style={{ color: "rgba(134,239,172,0.5)", fontSize: 12 }}>▾</span>
@@ -365,11 +365,11 @@ export default function Dashboard() {
                 }} />
 
                 {/* Zone fill — risk left (0–2) */}
-                <Scatter data={curveData.filter(d => d.x <= 2)}
-                  line={{ stroke: "transparent" }} shape={(props) => {
-                    if (props.index !== 0) return null;
-                    return <rect x={props.cx} y={0} width={0} height={0} fill="transparent" />;
-                  }} />
+                <ReferenceArea x1={0} x2={2} fill="#dc2626" fillOpacity={0.08} />
+                <ReferenceArea x1={2} x2={4} fill="#d97706" fillOpacity={0.08} />
+                <ReferenceArea x1={4} x2={6} fill="#16a34a" fillOpacity={0.12} />
+                <ReferenceArea x1={6} x2={8} fill="#d97706" fillOpacity={0.08} />
+                <ReferenceArea x1={8} x2={10} fill="#dc2626" fillOpacity={0.08} />
 
                 {/* Vertical dividers */}
                 <ReferenceLine x={2} stroke="#e2e8f0" strokeDasharray="4 3" strokeWidth={1} />
@@ -402,8 +402,25 @@ export default function Dashboard() {
                   line={{ stroke: "transparent" }} shape={() => <></>}
                   fill="url(#riskFillL)" />
 
-                {/* Curve line */}
-                <Scatter data={curveData} line={{ stroke: "#d97706", strokeWidth: 2.5 }} shape={() => <></>} />
+                {/* Curve — risk left */}
+                <Scatter data={curveData.filter(d => d.x <= 2)}
+                  line={{ stroke: "#dc2626", strokeWidth: 2.5 }} shape={() => <></>} />
+
+                {/* Curve — caution left */}
+                <Scatter data={curveData.filter(d => d.x >= 2 && d.x <= 4)}
+                  line={{ stroke: "#d97706", strokeWidth: 2.5 }} shape={() => <></>} />
+
+                {/* Curve — optimal */}
+                <Scatter data={curveData.filter(d => d.x >= 4 && d.x <= 6)}
+                  line={{ stroke: "#16a34a", strokeWidth: 2.5 }} shape={() => <></>} />
+
+                {/* Curve — caution right */}
+                <Scatter data={curveData.filter(d => d.x >= 6 && d.x <= 8)}
+                  line={{ stroke: "#d97706", strokeWidth: 2.5 }} shape={() => <></>} />
+
+                {/* Curve — risk right */}
+                <Scatter data={curveData.filter(d => d.x >= 8)}
+                  line={{ stroke: "#dc2626", strokeWidth: 2.5 }} shape={() => <></>} />
 
                 {/* Team dots */}
                 <Scatter
