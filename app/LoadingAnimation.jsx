@@ -48,7 +48,7 @@ export default function LoadingAnimation({ onDone }) {
       else if (p < 0.51) v =  Math.sin((p - 0.45) / 0.06 * Math.PI) * 0.18;
       else if (p < 0.57) v =  Math.sin((p - 0.51) / 0.06 * Math.PI) * 0.21;
       else v = 0;
-      return v * 90 + (Math.random() - 0.5) * 0.8;
+      return v * 180 + (Math.random() - 0.5) * 1.2;
     }
 
     function barEcg(ph) {
@@ -64,7 +64,7 @@ export default function LoadingAnimation({ onDone }) {
       else if (p < 0.51) v =  Math.sin((p - 0.45) / 0.06 * Math.PI) * 0.18;
       else if (p < 0.57) v =  Math.sin((p - 0.51) / 0.06 * Math.PI) * 0.21;
       else v = 0;
-      return v * 28 + (Math.random() - 0.5) * 0.4;
+      return v * 48 + (Math.random() - 0.5) * 0.6;
     }
 
     function spawnParticles(x, y) {
@@ -106,7 +106,7 @@ export default function LoadingAnimation({ onDone }) {
       g1.addColorStop(Math.max(0, p - 0.55), "rgba(0,0,0,0)");
       g1.addColorStop(Math.max(0, p - 0.08), `rgba(${GRGB},0.09)`);
       g1.addColorStop(Math.min(1, p),         "rgba(0,0,0,0)");
-      bx.strokeStyle = g1; bx.lineWidth = 20; bx.lineJoin = "round"; bx.stroke();
+      bx.strokeStyle = g1; bx.lineWidth = 40; bx.lineJoin = "round"; bx.stroke();
       bx.restore();
 
       bx.save();
@@ -120,7 +120,7 @@ export default function LoadingAnimation({ onDone }) {
       g2.addColorStop(Math.max(0, p - 0.42), "rgba(0,0,0,0)");
       g2.addColorStop(Math.max(0, p - 0.05), `rgba(${GRGB},0.6)`);
       g2.addColorStop(Math.min(1, p),         "rgba(0,0,0,0)");
-      bx.strokeStyle = g2; bx.lineWidth = 3.5; bx.lineJoin = "round"; bx.stroke();
+      bx.strokeStyle = g2; bx.lineWidth = 6; bx.lineJoin = "round"; bx.stroke();
       bx.restore();
 
       bx.save();
@@ -139,7 +139,7 @@ export default function LoadingAnimation({ onDone }) {
 
       bx.save();
       bx.fillStyle = BG;
-      bx.fillRect(hx, CY - 115, 34, 230);
+      bx.fillRect(hx, CY - 220, 34, 440);
       bx.restore();
 
       bx.save();
