@@ -124,7 +124,7 @@ export default function Timeline() {
         <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 32, height: 32, background: "#22c55e", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#0a2818", flexShrink: 0 }}>N</div>
           <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 13, fontWeight: 500, color: "#fff", margin: 0 }}>Nina</p>
+            <p style={{ fontSize: 13, fontWeight: 500, color: "#fff", margin: 0 }}>Osman</p>
             <p style={{ fontSize: 11, color: "rgba(134,239,172,0.5)", margin: 0 }}>Admin</p>
           </div>
           <span style={{ color: "rgba(134,239,172,0.5)", fontSize: 12 }}>▾</span>
