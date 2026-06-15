@@ -60,7 +60,7 @@ export default function Teams() {
     async function fetchData() {
       const { data, error } = await supabase
         .from("survey_responses")
-        .select(`q1_workload, q2_energy, q3_recovery, q4_motivation, q5_social, teams ( name )`);
+        .select(`q1_workload, q2_energy, q3_recovery, q4_motivation, q5_social, week_start, teams ( name )`);
 
       if (error) { console.error(error); return; }
 
@@ -72,7 +72,9 @@ export default function Teams() {
         teamMap[name].energy.push(r.q2_energy);
         teamMap[name].recovery.push(r.q3_recovery);
         teamMap[name].motivation.push(r.q4_motivation);
-        teamMap[name].social.push(r.q5_social);
+        if (r.week_start >= "2026-06-08") {
+            teamMap[name].social.push(r.q5_social);
+        }
       });
 
       const teamData = Object.entries(teamMap).map(([name, dims]) => {
@@ -245,7 +247,7 @@ export default function Teams() {
           {/* Summary row */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 16 }}>
             {[
-              { label: "Most supported", value: teams.find(t => t.social === Math.max(...teams.map(x => x.social)))?.name || "—", sub: "Highest social score", color: "#16a34a", icon: "👥" },
+              { label: "Strongest social", value: teams.find(t => Math.abs(t.social - 5) === Math.min(...teams.map(x => Math.abs(x.social - 5))))?.name || "—", sub: "Closest to optimal social", color: "#16a34a", icon: "👥" },
               { label: "Recovery concern", value: teams.find(t => t.recovery === Math.min(...teams.map(x => x.recovery)))?.name || "—", sub: "Lowest recovery score", color: "#d97706", icon: "🔋" },
               { label: "Cohort avg g-score", value: avg(teams.map(t => t.overall)).toFixed(2), sub: "Across all teams", color: "#0f172a", icon: "📊" },
               { label: "Teams in optimal zone", value: teams.filter(t => t.arousal >= 4 && t.arousal <= 6).length.toString(), sub: `of ${teams.length} teams`, color: "#16a34a", icon: "✅" },
