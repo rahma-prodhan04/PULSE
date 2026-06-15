@@ -158,8 +158,6 @@ export default function WeekView() {
             { label: "Overview", icon: "⊞" },
             { label: "Teams", icon: "👤" },
             { label: "Timeline", icon: "🕐" },
-            { label: "Flags", icon: "🚩" },
-            { label: "Settings", icon: "⚙" },
           ].map(item => (
             <button key={item.label}
               onClick={() => {

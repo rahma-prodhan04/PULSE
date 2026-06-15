@@ -125,8 +125,6 @@ export default function Teams() {
             { label: "Overview", icon: "⊞" },
             { label: "Teams", icon: "👤", active: true },
             { label: "Timeline", icon: "🕐" },
-            { label: "Flags", icon: "🚩" },
-            { label: "Settings", icon: "⚙" },
           ].map(item => (
             <button key={item.label}
               onClick={() => {

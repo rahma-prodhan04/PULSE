@@ -188,8 +188,6 @@ export default function Dashboard() {
             { label: "Overview", icon: "⊞", active: true },
             { label: "Teams", icon: "👤", active: false },
             { label: "Timeline", icon: "🕐", active: false },
-            { label: "Flags", icon: "🚩", active: false },
-            { label: "Settings", icon: "⚙", active: false },
           ].map(item => (
             <button key={item.label}
               onClick={() => {

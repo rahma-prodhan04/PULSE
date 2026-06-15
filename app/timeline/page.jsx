@@ -101,8 +101,6 @@ export default function Timeline() {
             { label: "Overview", icon: "⊞" },
             { label: "Teams", icon: "👤" },
             { label: "Timeline", icon: "🕐", active: true },
-            { label: "Flags", icon: "🚩" },
-            { label: "Settings", icon: "⚙" },
           ].map(item => (
             <button key={item.label}
               onClick={() => {
