@@ -38,8 +38,6 @@ function Cell({ value }) {
   );
 }
 
-const RANK_ICONS = { 1: "🥇", 2: "🥈", 3: "🥉" };
-
 const COLUMNS = [
   { key: "overall", label: "G-Score" },
   { key: "arousal", label: "Arousal" },
@@ -54,7 +52,7 @@ export default function Teams() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [teams, setTeams] = useState([]);
-  const [sortBy, setSortBy] = useState("overall");
+  const [sortBy, setSortBy] = useState("name");
   const [sortDir, setSortDir] = useState("desc");
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -102,9 +100,12 @@ export default function Teams() {
     }
   };
 
-  const sorted = [...teams].sort((a, b) =>
-    sortDir === "desc" ? b[sortBy] - a[sortBy] : a[sortBy] - b[sortBy]
-  );
+    const sorted = [...teams].sort((a, b) => {
+    if (sortBy === "name") return sortDir === "desc"
+        ? b.name.localeCompare(a.name)
+        : a.name.localeCompare(b.name);
+    return sortDir === "desc" ? b[sortBy] - a[sortBy] : a[sortBy] - b[sortBy];
+    });
 
   if (loading) return <LoadingAnimation onDone={() => setLoading(false)} />;
 
@@ -191,7 +192,6 @@ export default function Teams() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                  <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.06em", textTransform: "uppercase", width: 48 }}>Rank</th>
                   <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.06em", textTransform: "uppercase" }}>Team</th>
                   {COLUMNS.map(col => (
                     <th key={col.key}
@@ -210,9 +210,7 @@ export default function Teams() {
               </thead>
               <tbody>
                 {sorted.map((team, i) => {
-                  const rank = i + 1;
                   const badge = getZoneBadge(team.arousal);
-                  const originalRank = teams.findIndex(t => t.name === team.name) + 1;
                   return (
                     <tr key={team.name}
                       onMouseEnter={() => setHoveredRow(team.name)}
@@ -222,12 +220,6 @@ export default function Teams() {
                         background: hoveredRow === team.name ? "#f8fafc" : "#fff",
                         transition: "background 0.1s",
                       }}>
-                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                        {RANK_ICONS[originalRank]
-                          ? <span style={{ fontSize: 18 }}>{RANK_ICONS[originalRank]}</span>
-                          : <span style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8" }}>{originalRank}</span>
-                        }
-                      </td>
                       <td style={{ padding: "12px 16px" }}>
                         <span style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>{team.name}</span>
                       </td>
@@ -253,8 +245,8 @@ export default function Teams() {
           {/* Summary row */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 16 }}>
             {[
-              { label: "Top performing team", value: teams[0]?.name || "—", sub: `${teams[0]?.overall ?? "—"} g-score`, color: "#16a34a", icon: "🥇" },
-              { label: "Needs attention", value: teams[teams.length - 1]?.name || "—", sub: `${teams[teams.length - 1]?.overall ?? "—"} g-score`, color: "#dc2626", icon: "⚠️" },
+              { label: "Most supported", value: teams.find(t => t.social === Math.max(...teams.map(x => x.social)))?.name || "—", sub: "Highest social score", color: "#16a34a", icon: "👥" },
+              { label: "Recovery concern", value: teams.find(t => t.recovery === Math.min(...teams.map(x => x.recovery)))?.name || "—", sub: "Lowest recovery score", color: "#d97706", icon: "🔋" },
               { label: "Cohort avg g-score", value: avg(teams.map(t => t.overall)).toFixed(2), sub: "Across all teams", color: "#0f172a", icon: "📊" },
               { label: "Teams in optimal zone", value: teams.filter(t => t.arousal >= 4 && t.arousal <= 6).length.toString(), sub: `of ${teams.length} teams`, color: "#16a34a", icon: "✅" },
             ].map(m => (
