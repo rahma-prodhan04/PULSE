@@ -188,13 +188,12 @@ export default function Dashboard() {
             { label: "Overview", icon: "⊞", active: true },
             { label: "Teams", icon: "👤", active: false },
             { label: "Timeline", icon: "🕐", active: false },
-            { label: "Flags", icon: "🚩", active: false },
-            { label: "Settings", icon: "⚙", active: false },
           ].map(item => (
             <button key={item.label}
               onClick={() => {
                 if (item.label === "Overview") router.push("/");
                 if (item.label === "Timeline") router.push("/timeline");
+                if (item.label === "Teams") router.push("/teams");
               }}
               style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%",

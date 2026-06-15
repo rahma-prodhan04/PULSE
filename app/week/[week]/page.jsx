@@ -158,13 +158,12 @@ export default function WeekView() {
             { label: "Overview", icon: "⊞" },
             { label: "Teams", icon: "👤" },
             { label: "Timeline", icon: "🕐" },
-            { label: "Flags", icon: "🚩" },
-            { label: "Settings", icon: "⚙" },
           ].map(item => (
             <button key={item.label}
               onClick={() => {
                 if (item.label === "Overview") router.push("/");
                 if (item.label === "Timeline") router.push("/timeline");
+                if (item.label === "Teams") router.push("/teams");
               }}
               style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%",

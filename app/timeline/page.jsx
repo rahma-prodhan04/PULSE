@@ -101,13 +101,12 @@ export default function Timeline() {
             { label: "Overview", icon: "⊞" },
             { label: "Teams", icon: "👤" },
             { label: "Timeline", icon: "🕐", active: true },
-            { label: "Flags", icon: "🚩" },
-            { label: "Settings", icon: "⚙" },
           ].map(item => (
             <button key={item.label}
               onClick={() => {
                 if (item.label === "Overview") router.push("/");
                 if (item.label === "Timeline") router.push("/timeline");
+                if (item.label === "Teams") router.push("/teams");
               }}
               style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%",
@@ -122,17 +121,10 @@ export default function Timeline() {
             </button>
           ))}
         </nav>
-        <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <span style={{ fontSize: 14 }}>💬</span>
-            <span style={{ fontSize: 12, fontWeight: 500, color: "#fff" }}>Need help?</span>
-          </div>
-          <p style={{ fontSize: 11, color: "#22c55e", marginLeft: 22 }}>Visit our help center ↗</p>
-        </div>
         <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 32, height: 32, background: "#22c55e", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#0a2818", flexShrink: 0 }}>N</div>
           <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 13, fontWeight: 500, color: "#fff", margin: 0 }}>Nina</p>
+            <p style={{ fontSize: 13, fontWeight: 500, color: "#fff", margin: 0 }}>Osman</p>
             <p style={{ fontSize: 11, color: "rgba(134,239,172,0.5)", margin: 0 }}>Admin</p>
           </div>
           <span style={{ color: "rgba(134,239,172,0.5)", fontSize: 12 }}>▾</span>
