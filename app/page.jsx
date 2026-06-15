@@ -8,6 +8,7 @@ import {
   Tooltip, LineChart, Line, ReferenceLine, AreaChart, Area, ReferenceArea
 } from "recharts";
 import LoadingAnimation from "./LoadingAnimation";
+import ExportButton from "./ExportButton";
 
 function ydY(x) {
   return 100 * Math.exp(-0.5 * Math.pow((x - 5) / 2.2, 2));
@@ -85,6 +86,7 @@ export default function Dashboard() {
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState("Cohort average");
   const [weekFilter, setWeekFilter] = useState("");
+  const exportRef = useRef(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -257,15 +259,13 @@ export default function Dashboard() {
                 <option value="">📅 All weeks ▾</option>
                 {weeks.map((w, i) => <option key={w} value={w}>Week {i + 3}</option>)}
               </select>
-              <button style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, padding: "8px 16px", border: "none", borderRadius: 8, background: "#16a34a", color: "#fff", cursor: "pointer" }}>
-                ⬇ Export
-              </button>
+              <ExportButton weeks={weeks} dashboardRef={exportRef} weekOffset={3} />
             </div>
           </div>
         </header>
 
         {/* Scrollable body */}
-        <main style={{ flex: 1, overflowY: "auto", padding: "20px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+        <main ref={exportRef} style={{ flex: 1, overflowY: "auto", padding: "20px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
 
           {/* Metric cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
