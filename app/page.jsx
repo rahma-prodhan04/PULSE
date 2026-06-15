@@ -195,6 +195,7 @@ export default function Dashboard() {
               onClick={() => {
                 if (item.label === "Overview") router.push("/");
                 if (item.label === "Timeline") router.push("/timeline");
+                if (item.label === "Teams") router.push("/teams");
               }}
               style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%",
