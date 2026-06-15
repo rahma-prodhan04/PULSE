@@ -192,6 +192,10 @@ export default function Dashboard() {
             { label: "Settings", icon: "⚙", active: false },
           ].map(item => (
             <button key={item.label}
+              onClick={() => {
+                if (item.label === "Overview") router.push("/");
+                if (item.label === "Timeline") router.push("/timeline");
+              }}
               style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%",
                 padding: "10px 20px", border: "none", background: item.active ? "rgba(34,197,94,0.12)" : "transparent",

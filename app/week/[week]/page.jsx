@@ -162,7 +162,10 @@ export default function WeekView() {
             { label: "Settings", icon: "⚙" },
           ].map(item => (
             <button key={item.label}
-              onClick={() => item.label === "Overview" && router.push("/")}
+              onClick={() => {
+                if (item.label === "Overview") router.push("/");
+                if (item.label === "Timeline") router.push("/timeline");
+              }}
               style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%",
                 padding: "10px 20px", border: "none", background: "transparent",
