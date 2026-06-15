@@ -424,12 +424,11 @@ export default function Dashboard() {
 
                 {/* Team dots */}
                 <Scatter
-                  data={teams.map(t => ({ x: t.arousal, y: t.perf, name: t.name, g: t.g }))}
+                  data={teams.map(t => ({ x: t.arousal, y: t.perf, name: t.name, g: t.g, color: getZoneColor(t.arousal) }))}
                   fill="#16a34a"
                   shape={(props) => {
-                    const team = teams.find(t => t.arousal === props.x);
                     return <circle cx={props.cx} cy={props.cy} r={7}
-                      fill={team ? getZoneColor(team.arousal) : "#16a34a"}
+                      fill={props.color || "#16a34a"}
                       stroke="#fff" strokeWidth={2} />;
                   }}
                 />
