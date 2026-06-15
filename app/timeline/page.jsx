@@ -217,16 +217,21 @@ export default function Timeline() {
                   }}
                 />
                 {teamNames.map((name, i) => (
-                  <Line
+                <Line
                     key={name}
                     type="monotone"
                     dataKey={name}
                     stroke={TEAM_COLORS[i % TEAM_COLORS.length]}
-                    strokeWidth={hoveredTeam === null || hoveredTeam === name ? 2.5 : 0.8}
-                    strokeOpacity={hoveredTeam === null || hoveredTeam === name ? 1 : 0.25}
-                    dot={{ r: 5, fill: TEAM_COLORS[i % TEAM_COLORS.length], stroke: "#fff", strokeWidth: 2 }}
+                    strokeWidth={hoveredTeam === name ? 4 : hoveredTeam === null ? 2 : 1}
+                    strokeOpacity={hoveredTeam === name ? 1 : hoveredTeam === null ? 0.8 : 0.15}
+                    dot={hoveredTeam === null || hoveredTeam === name
+                    ? { r: 5, fill: TEAM_COLORS[i % TEAM_COLORS.length], stroke: "#fff", strokeWidth: 2 }
+                    : { r: 0 }
+                    }
+                    activeDot={{ r: 7 }}
                     connectNulls
-                  />
+                    isAnimationActive={false}
+                />
                 ))}
               </LineChart>
             </ResponsiveContainer>
