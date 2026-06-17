@@ -8,6 +8,7 @@ import {
   ResponsiveContainer, Tooltip, Cell, ReferenceArea, ReferenceLine,
 } from "recharts";
 import LoadingAnimation from "../../LoadingAnimation";
+import ExportButton from "../../ExportButton";
 
 function getWeekNumber(dateStr) {
   const programStart = new Date("2026-06-01");
@@ -228,9 +229,17 @@ export default function WeekView() {
                   <option key={w} value={w}>Week {getWeekNumber(w)}</option>
                 ))}
               </select>
-              <button style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, padding: "8px 16px", border: "none", borderRadius: 8, background: "#16a34a", color: "#fff", cursor: "pointer" }}>
-                ⬇ Export
-              </button>
+              <ExportButton
+                exportData={{
+                  teams,
+                  cohortAvg,
+                  cohortDimensions,
+                  responses,
+                  trendData: [{ week, label: week, v: cohortAvg, g: cohortAvg }],
+                }}
+                filename={`PULSE_Dashboard_Week_${getWeekNumber(week)}.pdf`}
+                page2Chart="comparison"
+              />
             </div>
           </div>
         </header>
