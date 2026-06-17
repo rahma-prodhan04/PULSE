@@ -259,13 +259,22 @@ export default function Dashboard() {
                 <option value="">📅 All weeks ▾</option>
                 {weeks.map((w, i) => <option key={w} value={w}>Week {i + 3}</option>)}
               </select>
-              <ExportButton weeks={weeks} dashboardRef={exportRef} weekOffset={3} />
+              <ExportButton
+                exportData={{
+                  teams,
+                  cohortAvg,
+                  cohortDimensions,
+                  trendData,
+                  responses,
+                }}
+                filename="PULSE_Dashboard_All_Weeks.pdf"
+              />
             </div>
           </div>
         </header>
 
         {/* Scrollable body */}
-        <main ref={exportRef} style={{ flex: 1, overflowY: "auto", padding: "20px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+        <main style={{ flex: 1, overflowY: "auto", padding: "20px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
 
           {/* Metric cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
