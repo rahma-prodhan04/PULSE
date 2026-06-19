@@ -222,7 +222,10 @@ export default function Teams() {
                         background: hoveredRow === team.name ? "#f8fafc" : "#fff",
                         transition: "background 0.1s",
                       }}>
-                      <td style={{ padding: "12px 16px" }}>
+                      <td
+                        style={{ padding: "12px 16px", cursor: "pointer" }}
+                        onClick={() => router.push(`/teams/${encodeURIComponent(team.name)}`)}
+                      >
                         <span style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>{team.name}</span>
                       </td>
                       <Cell value={team.overall} />
