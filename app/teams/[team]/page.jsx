@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import {
   ScatterChart, Scatter, XAxis, YAxis, LineChart, Line,
-  BarChart, Bar, Cell, ResponsiveContainer, Tooltip, ReferenceArea, ReferenceLine,
+  ResponsiveContainer, Tooltip, ReferenceArea, ReferenceLine,
 } from "recharts";
 import LoadingAnimation from "../../LoadingAnimation";
 import ExportButton from "../../ExportButton";
@@ -48,9 +48,10 @@ export default function TeamView() {
 
   const [loading, setLoading] = useState(true);
   const [allTeamNames, setAllTeamNames] = useState([]);
+  const [teamResponses, setTeamResponses] = useState([]);
   const [weeklyData, setWeeklyData] = useState([]);
   const [cohortWeeklyAvg, setCohortWeeklyAvg] = useState({});
-  const [individualScores, setIndividualScores] = useState([]);
+  const [selectedWeek, setSelectedWeek] = useState("");
 
   useEffect(() => {
     async function fetchData() {
@@ -64,6 +65,7 @@ export default function TeamView() {
       setAllTeamNames(names);
 
       const teamRows = data.filter(r => r.teams?.name === teamName);
+      setTeamResponses(teamRows);
 
       const byWeek = {};
       teamRows.forEach(r => {
@@ -90,15 +92,7 @@ export default function TeamView() {
       }).sort((a, b) => new Date(a.week) - new Date(b.week));
 
       setWeeklyData(weekly);
-
-      const latestWeek = weekly.length ? weekly[weekly.length - 1].week : null;
-      const individuals = teamRows
-        .filter(r => r.week_start === latestWeek)
-        .map((r, i) => {
-          const score = avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation, r.q5_social]);
-          return { label: `R${i + 1}`, score, color: getDimColor(score) };
-        });
-      setIndividualScores(individuals);
+      setSelectedWeek(weekly.length ? weekly[weekly.length - 1].week : "");
 
       const cohortByWeek = {};
       data.forEach(r => {
@@ -118,8 +112,8 @@ export default function TeamView() {
   const totalResponses = weeklyData.reduce((sum, w) => sum + w.responses, 0);
   const latest = weeklyData[weeklyData.length - 1];
   const overallAvg = weeklyData.length ? avg(weeklyData.map(w => w.overall)) : 0;
-  const bestWeek = [...weeklyData].sort((a, b) => Math.abs(a.overall - 5) - Math.abs(b.overall - 5))[0];
-  const worstWeek = [...weeklyData].sort((a, b) => Math.abs(b.overall - 5) - Math.abs(a.overall - 5))[0];
+  const bestWeek = weeklyData.length ? [...weeklyData].sort((a, b) => Math.abs(a.overall - 5) - Math.abs(b.overall - 5))[0] : null;
+  const worstWeek = weeklyData.length ? [...weeklyData].sort((a, b) => Math.abs(b.overall - 5) - Math.abs(a.overall - 5))[0] : null;
 
   const cohortDimensions = weeklyData.length ? [
     { label: "Social", value: avg(weeklyData.map(w => w.social)) },
@@ -132,6 +126,17 @@ export default function TeamView() {
   const trendData = weeklyData.map(w => ({
     week: w.week, label: w.label, g: w.overall, cohort: cohortWeeklyAvg[w.week] ?? null,
   }));
+
+  // Per-individual scores for the selected week, plotted on the curve
+  const individualScores = teamResponses
+    .filter(r => r.week_start === selectedWeek)
+    .map((r, i) => {
+      const arousal = avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation]);
+      const score = avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation, r.q5_social]);
+      return { label: `R${i + 1}`, x: arousal, y: ydY(arousal), g: score, color: getZoneColor(arousal) };
+    });
+
+  const selectedWeekLabel = weeklyData.find(w => w.week === selectedWeek)?.label || "—";
 
   if (loading) return <LoadingAnimation onDone={() => setLoading(false)} />;
 
@@ -264,13 +269,22 @@ export default function TeamView() {
           {/* Middle row */}
           <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 16 }}>
 
-            {/* Curve — trajectory across weeks */}
+            {/* Curve — individual responses for selected week */}
             <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>
-                  Yerkes-Dodson Curve — {teamName} Trajectory
-                </p>
-                <span style={{ fontSize: 12, color: "#94a3b8" }}>ⓘ</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>
+                    Yerkes-Dodson Curve — Individual Responses
+                  </p>
+                  <span style={{ fontSize: 12, color: "#94a3b8" }}>ⓘ</span>
+                </div>
+                <select
+                  style={{ fontSize: 12, padding: "5px 10px", border: "1px solid #e2e8f0", borderRadius: 6, background: "#fff", color: "#374151" }}
+                  value={selectedWeek}
+                  onChange={e => setSelectedWeek(e.target.value)}
+                >
+                  {weeklyData.map(w => <option key={w.week} value={w.week}>{w.label}</option>)}
+                </select>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, padding: "0 20px" }}>
                 {[["Risk", "#dc2626", "1 – 2.9"], ["Caution", "#d97706", "2 – 3.9"], ["Optimal", "#16a34a", "4 – 6"], ["Caution", "#d97706", "6 – 8"], ["Risk", "#dc2626", "8 – 10"]].map(([label, color, range]) => (
@@ -311,26 +325,24 @@ export default function TeamView() {
                   <Scatter data={curveData.filter(d => d.x >= 4 && d.x <= 6)} line={{ stroke: "#16a34a", strokeWidth: 2.5 }} shape={() => <></>} />
                   <Scatter data={curveData.filter(d => d.x >= 6 && d.x <= 8)} line={{ stroke: "#d97706", strokeWidth: 2.5 }} shape={() => <></>} />
                   <Scatter data={curveData.filter(d => d.x >= 8)} line={{ stroke: "#dc2626", strokeWidth: 2.5 }} shape={() => <></>} />
-                  {/* One dot per week — colored by that week's zone, latest week emphasized */}
                   <Scatter
-                    data={weeklyData.map((w, i) => ({
-                      x: w.arousal, y: w.perf, label: w.label, g: w.overall,
-                      color: getZoneColor(w.arousal), isLatest: i === weeklyData.length - 1,
-                    }))}
+                    data={individualScores}
                     shape={(props) => (
-                      <circle cx={props.cx} cy={props.cy} r={props.isLatest ? 8 : 5.5}
-                        fill={props.color} stroke="#fff" strokeWidth={2}
-                        opacity={props.isLatest ? 1 : 0.55} />
+                      <circle cx={props.cx} cy={props.cy} r={7}
+                        fill={props.color} stroke="#fff" strokeWidth={2} />
                     )}
                   />
                 </ScatterChart>
               </ResponsiveContainer>
-              <div style={{ display: "flex", gap: 20, marginTop: 4 }}>
-                {[["#16a34a", "Optimal (4 – 6)"], ["#d97706", "Caution (2 – 4, 6 – 8)"], ["#dc2626", "Risk (1 – 2, 9 – 10)"]].map(([c, l]) => (
-                  <span key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#64748b" }}>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: c, display: "inline-block" }} />{l}
-                  </span>
-                ))}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+                <div style={{ display: "flex", gap: 20 }}>
+                  {[["#16a34a", "Optimal (4 – 6)"], ["#d97706", "Caution (2 – 4, 6 – 8)"], ["#dc2626", "Risk (1 – 2, 9 – 10)"]].map(([c, l]) => (
+                    <span key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#64748b" }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: c, display: "inline-block" }} />{l}
+                    </span>
+                  ))}
+                </div>
+                <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>{individualScores.length} responses · {selectedWeekLabel}</p>
               </div>
             </div>
 
@@ -354,38 +366,73 @@ export default function TeamView() {
             </div>
           </div>
 
-          {/* Individual scores for latest week */}
+          {/* Curve — full trajectory across all weeks */}
           <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: "0 0 14px", textTransform: "uppercase" }}>
-              Individual Scores — {latest?.label || "—"}
-            </p>
-            {individualScores.length ? (
-              <>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={individualScores} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
-                    <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis domain={[0, 10]} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <ReferenceLine y={5} stroke="#94a3b8" strokeDasharray="4 3" />
-                    <Tooltip content={({ active, payload }) => {
-                      if (active && payload?.length) return (
-                        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
-                          <p style={{ color: "#64748b", margin: 0 }}>Score: <b style={{ color: "#0f172a" }}>{payload[0].value}</b></p>
-                        </div>
-                      );
-                      return null;
-                    }} />
-                    <Bar dataKey="score" radius={[4, 4, 0, 0]}>
-                      {individualScores.map((entry, index) => <Cell key={index} fill={entry.color} />)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-                <p style={{ fontSize: 11, color: "#94a3b8", margin: "8px 0 0" }}>
-                  Each bar is one anonymous response · dashed line marks optimal (5)
-                </p>
-              </>
-            ) : (
-              <p style={{ fontSize: 13, color: "#64748b" }}>No responses for this week yet.</p>
-            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>
+                Yerkes-Dodson Curve — {teamName} Trajectory
+              </p>
+              <span style={{ fontSize: 12, color: "#94a3b8" }}>ⓘ</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, padding: "0 20px" }}>
+              {[["Risk", "#dc2626", "1 – 2.9"], ["Caution", "#d97706", "2 – 3.9"], ["Optimal", "#16a34a", "4 – 6"], ["Caution", "#d97706", "6 – 8"], ["Risk", "#dc2626", "8 – 10"]].map(([label, color, range]) => (
+                <div key={range} style={{ textAlign: "center" }}>
+                  <p style={{ fontSize: 11, fontWeight: 600, color, margin: 0 }}>{label}</p>
+                  <p style={{ fontSize: 10, color: "#94a3b8", margin: 0 }}>({range})</p>
+                </div>
+              ))}
+            </div>
+            <ResponsiveContainer width="100%" height={240}>
+              <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
+                <XAxis dataKey="x" type="number" domain={[0, 10]} tickCount={6} tick={{ fontSize: 11 }}
+                  label={{ value: "Arousal level", position: "insideBottom", offset: -10, fontSize: 11, fill: "#94a3b8" }} />
+                <YAxis dataKey="y" type="number" domain={[0, 110]} hide />
+                <Tooltip content={({ active, payload }) => {
+                  if (active && payload?.length) {
+                    const d = payload[0].payload;
+                    if (d.label) return (
+                      <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
+                        <p style={{ fontWeight: 600, margin: "0 0 2px", color: "#0f172a" }}>{d.label}</p>
+                        <p style={{ color: "#64748b", margin: 0 }}>Score: <b style={{ color: "#0f172a" }}>{d.g}</b> · Arousal: <b style={{ color: "#0f172a" }}>{d.x}</b></p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }} />
+                <ReferenceArea x1={0} x2={2} fill="#dc2626" fillOpacity={0.08} />
+                <ReferenceArea x1={2} x2={4} fill="#d97706" fillOpacity={0.08} />
+                <ReferenceArea x1={4} x2={6} fill="#16a34a" fillOpacity={0.12} />
+                <ReferenceArea x1={6} x2={8} fill="#d97706" fillOpacity={0.08} />
+                <ReferenceArea x1={8} x2={10} fill="#dc2626" fillOpacity={0.08} />
+                <ReferenceLine x={2} stroke="#e2e8f0" strokeDasharray="4 3" strokeWidth={1} />
+                <ReferenceLine x={4} stroke="#e2e8f0" strokeDasharray="4 3" strokeWidth={1} />
+                <ReferenceLine x={6} stroke="#e2e8f0" strokeDasharray="4 3" strokeWidth={1} />
+                <ReferenceLine x={8} stroke="#e2e8f0" strokeDasharray="4 3" strokeWidth={1} />
+                <Scatter data={curveData.filter(d => d.x <= 2)} line={{ stroke: "#dc2626", strokeWidth: 2.5 }} shape={() => <></>} />
+                <Scatter data={curveData.filter(d => d.x >= 2 && d.x <= 4)} line={{ stroke: "#d97706", strokeWidth: 2.5 }} shape={() => <></>} />
+                <Scatter data={curveData.filter(d => d.x >= 4 && d.x <= 6)} line={{ stroke: "#16a34a", strokeWidth: 2.5 }} shape={() => <></>} />
+                <Scatter data={curveData.filter(d => d.x >= 6 && d.x <= 8)} line={{ stroke: "#d97706", strokeWidth: 2.5 }} shape={() => <></>} />
+                <Scatter data={curveData.filter(d => d.x >= 8)} line={{ stroke: "#dc2626", strokeWidth: 2.5 }} shape={() => <></>} />
+                <Scatter
+                  data={weeklyData.map((w, i) => ({
+                    x: w.arousal, y: w.perf, label: w.label, g: w.overall,
+                    color: getZoneColor(w.arousal), isLatest: i === weeklyData.length - 1,
+                  }))}
+                  shape={(props) => (
+                    <circle cx={props.cx} cy={props.cy} r={props.isLatest ? 8 : 5.5}
+                      fill={props.color} stroke="#fff" strokeWidth={2}
+                      opacity={props.isLatest ? 1 : 0.55} />
+                  )}
+                />
+              </ScatterChart>
+            </ResponsiveContainer>
+            <div style={{ display: "flex", gap: 20, marginTop: 4 }}>
+              {[["#16a34a", "Optimal (4 – 6)"], ["#d97706", "Caution (2 – 4, 6 – 8)"], ["#dc2626", "Risk (1 – 2, 9 – 10)"]].map(([c, l]) => (
+                <span key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#64748b" }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: c, display: "inline-block" }} />{l}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* Trend — this team vs cohort */}
