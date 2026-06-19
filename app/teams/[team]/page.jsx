@@ -108,8 +108,8 @@ export default function TeamView() {
   const totalResponses = weeklyData.reduce((sum, w) => sum + w.responses, 0);
   const latest = weeklyData[weeklyData.length - 1];
   const overallAvg = weeklyData.length ? avg(weeklyData.map(w => w.overall)) : 0;
-  const bestWeek = weeklyData.length ? [...weeklyData].sort((a, b) => b.overall - a.overall)[0] : null;
-  const worstWeek = weeklyData.length ? [...weeklyData].sort((a, b) => a.overall - b.overall)[0] : null;
+  const bestWeek = [...weeklyData].sort((a, b) => Math.abs(a.overall - 5) - Math.abs(b.overall - 5))[0];
+  const worstWeek = [...weeklyData].sort((a, b) => Math.abs(b.overall - 5) - Math.abs(a.overall - 5))[0];
 
   const cohortDimensions = weeklyData.length ? [
     { label: "Social", value: avg(weeklyData.map(w => w.social)) },
