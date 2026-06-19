@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import {
   ScatterChart, Scatter, XAxis, YAxis, LineChart, Line,
-  ResponsiveContainer, Tooltip, ReferenceArea, ReferenceLine,
+  BarChart, Bar, Cell, ResponsiveContainer, Tooltip, ReferenceArea, ReferenceLine,
 } from "recharts";
 import LoadingAnimation from "../../LoadingAnimation";
 import ExportButton from "../../ExportButton";
@@ -50,6 +50,7 @@ export default function TeamView() {
   const [allTeamNames, setAllTeamNames] = useState([]);
   const [weeklyData, setWeeklyData] = useState([]);
   const [cohortWeeklyAvg, setCohortWeeklyAvg] = useState({});
+  const [individualScores, setIndividualScores] = useState([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -89,6 +90,15 @@ export default function TeamView() {
       }).sort((a, b) => new Date(a.week) - new Date(b.week));
 
       setWeeklyData(weekly);
+
+      const latestWeek = weekly.length ? weekly[weekly.length - 1].week : null;
+      const individuals = teamRows
+        .filter(r => r.week_start === latestWeek)
+        .map((r, i) => {
+          const score = avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation, r.q5_social]);
+          return { label: `R${i + 1}`, score, color: getDimColor(score) };
+        });
+      setIndividualScores(individuals);
 
       const cohortByWeek = {};
       data.forEach(r => {
@@ -342,6 +352,40 @@ export default function TeamView() {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Individual scores for latest week */}
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: "0 0 14px", textTransform: "uppercase" }}>
+              Individual Scores — {latest?.label || "—"}
+            </p>
+            {individualScores.length ? (
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={individualScores} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
+                    <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 10]} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <ReferenceLine y={5} stroke="#94a3b8" strokeDasharray="4 3" />
+                    <Tooltip content={({ active, payload }) => {
+                      if (active && payload?.length) return (
+                        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
+                          <p style={{ color: "#64748b", margin: 0 }}>Score: <b style={{ color: "#0f172a" }}>{payload[0].value}</b></p>
+                        </div>
+                      );
+                      return null;
+                    }} />
+                    <Bar dataKey="score" radius={[4, 4, 0, 0]}>
+                      {individualScores.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <p style={{ fontSize: 11, color: "#94a3b8", margin: "8px 0 0" }}>
+                  Each bar is one anonymous response · dashed line marks optimal (5)
+                </p>
+              </>
+            ) : (
+              <p style={{ fontSize: 13, color: "#64748b" }}>No responses for this week yet.</p>
+            )}
           </div>
 
           {/* Trend — this team vs cohort */}
