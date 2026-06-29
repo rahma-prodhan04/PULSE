@@ -256,7 +256,7 @@ export default function Dashboard() {
                   if (e.target.value) router.push(`/week/${e.target.value}`);
                 }}
               >
-                <option value="">📅 All weeks ▾</option>
+                <option value="">All weeks▾</option>
                 {weeks.map((w, i) => <option key={w} value={w}>Week {i + 3}</option>)}
               </select>
               <ExportButton
@@ -319,9 +319,6 @@ export default function Dashboard() {
                   </p>
                   <span style={{ fontSize: 12, color: "#94a3b8" }}>ⓘ</span>
                 </div>
-                <select style={{ fontSize: 12, padding: "5px 10px", border: "1px solid #e2e8f0", borderRadius: 6, background: "#fff", color: "#374151" }}>
-                  <option>Cohort average</option>
-                </select>
               </div>
 
               {/* Zone labels */}
