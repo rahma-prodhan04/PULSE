@@ -128,7 +128,7 @@ export default function LoadingAnimation({ onDone }) {
       brc.restore();
     }
 
-    const loadTexts = ["Loading your dashboard", "Fetching team data", "Almost ready…"];
+    const loadTexts = ["Loading your screen", "Fetching team pulse", "Almost ready…"];
     let loadIdx = 0;
 
     function frame() {

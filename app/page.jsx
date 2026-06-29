@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import { useRouter } from "next/navigation";
 import {
   ScatterChart, Scatter, XAxis, YAxis, ResponsiveContainer,
-  Tooltip, LineChart, Line, ReferenceLine, AreaChart, Area, ReferenceArea
+  Tooltip, LineChart, Line, ReferenceLine, AreaChart, Area, ReferenceArea, Bar, BarChart
 } from "recharts";
 import LoadingAnimation from "./LoadingAnimation";
 import ExportButton from "./ExportButton";
@@ -37,18 +37,43 @@ function avg(arr) {
   return parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2));
 }
 
+function getWeekNumber(dateStr) {
+  const programStart = new Date("2026-06-01");
+  const current = new Date(dateStr);
+  const diff = Math.round((current - programStart) / (7 * 24 * 60 * 60 * 1000));
+  return diff + 3;
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + "T00:00:00"); // avoids timezone rollback to the previous day
+  return d.toLocaleDateString("en-AU", { month: "short", day: "numeric" }); // e.g. "1 Jun"
+}
+
+function getWeekLabel(dateStr) {
+  return `W${getWeekNumber(dateStr)} - ${formatDate(dateStr)}`;
+}
+
 const curveData = Array.from({ length: 101 }, (_, i) => ({
   x: parseFloat((i / 10).toFixed(1)),
   y: parseFloat(ydY(i / 10).toFixed(1)),
 }));
 
-const dimIcons = {
-  Social: "👥",
-  Workload: "💼",
-  Energy: "⚡",
-  Recovery: "❤️",
-  Motivation: "🎯",
-};
+const TOTAL_INTERNS = 69;
+
+function ResponseTick({ x, y, payload, dataMap }) {
+  const d = dataMap?.[payload.value];
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={12} textAnchor="middle" fontSize={10} fill="#64748b">{payload.value}</text>
+      {d && (
+        <text x={0} y={26} textAnchor="middle" fontSize={10} fontWeight={700} fill="#16a34a">
+          {d.engagementPct}% engagement
+        </text>
+      )}
+    </g>
+  );
+}
+
 
 const metricIcons = {
   "Cohort avg score": "📈",
@@ -143,9 +168,30 @@ export default function Dashboard() {
       return acc;
     }, {})
   ).sort(([a], [b]) => new Date(a) - new Date(b))
-    .map(([week, vals]) => ({ week, label: week, v: avg(vals), g: avg(vals) }));
+    .map(([week, vals]) => ({ week, label: getWeekLabel(week), v: avg(vals), g: avg(vals) }));
 
   const weeks = trendData.map(t => t.week);
+
+  // Response counts per week, broken down by team
+  const responseBreakdown = Object.entries(
+    responses.reduce((acc, r) => {
+      const wk = r.week_start;
+      const team = r.teams?.name || "Unknown";
+      if (!acc[wk]) acc[wk] = {};
+      acc[wk][team] = (acc[wk][team] || 0) + 1;
+      return acc;
+    }, {})
+  )
+    .sort(([a], [b]) => new Date(a) - new Date(b))
+    .map(([week, teamCounts]) => ({
+      week,
+      label: getWeekLabel(week),
+      total: Object.values(teamCounts).reduce((sum, n) => sum + n, 0),
+      teamCounts,
+    }))
+    .map(d => ({ ...d, engagementPct: Math.round((d.total / TOTAL_INTERNS) * 100) })); 
+
+  const breakdownByLabel = Object.fromEntries(responseBreakdown.map(d => [d.label, d]));
 
   // Sparkline data per metric
   const sparklines = {
@@ -256,7 +302,7 @@ export default function Dashboard() {
                   if (e.target.value) router.push(`/week/${e.target.value}`);
                 }}
               >
-                <option value="">📅 All weeks ▾</option>
+                <option value="">All weeks</option>
                 {weeks.map((w, i) => <option key={w} value={w}>Week {i + 3}</option>)}
               </select>
               <ExportButton
@@ -319,9 +365,6 @@ export default function Dashboard() {
                   </p>
                   <span style={{ fontSize: 12, color: "#94a3b8" }}>ⓘ</span>
                 </div>
-                <select style={{ fontSize: 12, padding: "5px 10px", border: "1px solid #e2e8f0", borderRadius: 6, background: "#fff", color: "#374151" }}>
-                  <option>Cohort average</option>
-                </select>
               </div>
 
               {/* Zone labels */}
@@ -455,7 +498,11 @@ export default function Dashboard() {
                   const badge = getZoneBadge(t.arousal);
                   const color = getZoneColor(t.arousal);
                   return (
-                    <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: i < teams.length - 1 ? "1px solid #f1f5f9" : "none" }}>
+                    <div key={t.name} 
+                      onClick={() => router.push(`/teams/${encodeURIComponent(t.name)}`)}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: i < teams.length - 1 ? "1px solid #f1f5f9" : "none" }}>
                       <span style={{ fontSize: 11, color: "#94a3b8", width: 16, textAlign: "right", flexShrink: 0 }}>{i + 1}</span>
                       <span style={{ width: 7, height: 7, borderRadius: "50%", background: color, flexShrink: 0 }} />
                       <span style={{ fontSize: 13, color: "#0f172a", flex: 1 }}>{t.name}</span>
@@ -492,7 +539,6 @@ export default function Dashboard() {
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                 {activeDimensions.map((d, i) => (
                   <div key={d.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: i < activeDimensions.length - 1 ? "1px solid #f1f5f9" : "none" }}>
-                    <span style={{ fontSize: 16, flexShrink: 0 }}>{dimIcons[d.label] || "📊"}</span>
                     <span style={{ fontSize: 13, color: "#374151", width: 80, flexShrink: 0 }}>{d.label}</span>
                     <div style={{ flex: 1, height: 6, background: "#f1f5f9", borderRadius: 3, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${(d.value / 10) * 100}%`, background: d.color, borderRadius: 3 }} />
@@ -523,13 +569,56 @@ export default function Dashboard() {
                 <LineChart data={trendData} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
                   <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis domain={[3, 8]} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(v) => [v.toFixed(2), "Score"]} />
+                  <Tooltip content={({ active, payload, label }) => {
+                    if (active && payload?.length) return (
+                      <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
+                        <p style={{ fontWeight: 700, color: "#0f172a", margin: "0 0 2px" }}>{label}</p>
+                        <p style={{ color: "#64748b", margin: 0 }}>Score: <b style={{ color: "#16a34a" }}>{payload[0].value.toFixed(2)}</b></p>
+                      </div>
+                    );
+                    return null;
+                  }} />
                   <Line type="monotone" dataKey="g" stroke="#16a34a" strokeWidth={2.5}
                     dot={{ r: 5, fill: "#16a34a", stroke: "#fff", strokeWidth: 2 }}
                     label={{ position: "top", fontSize: 11, fill: "#374151", fontWeight: 600 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
+          </div>
+          {/* Response breakdown */}
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: "0 0 14px", textTransform: "uppercase" }}>
+              Response Breakdown — By Week
+            </p>
+            <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={responseBreakdown} margin={{ top: 10, right: 20, bottom: 28, left: 0 }}>
+                  <XAxis dataKey="label" interval={0} axisLine={false} tickLine={false}
+                    tick={<ResponseTick dataMap={breakdownByLabel} />} />
+                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip content={({ active, payload, label }) => {
+                  if (active && payload?.length) {
+                    const d = payload[0].payload;
+                    const breakdown = Object.entries(d.teamCounts).sort(([, a], [, b]) => b - a);
+                    return (
+                      <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "10px 14px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)", minWidth: 140 }}>
+                        <p style={{ fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>{label}: {d.total} total</p>
+                        {breakdown.map(([name, count]) => (
+                          <div key={name} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                            <span style={{ color: "#64748b" }}>{name}</span>
+                            <span style={{ fontWeight: 600, color: "#0f172a" }}>{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return null;
+                }} />
+                <Bar dataKey="total" fill="#16a34a" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+            <p style={{ fontSize: 11, color: "#94a3b8", margin: "8px 0 0" }}>
+              Hover any bar to see the per-team breakdown for that week
+            </p>
           </div>
         </main>
       </div>
