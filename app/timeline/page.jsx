@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer,
-  Tooltip, Legend, ReferenceLine,
+  Tooltip, Legend, ReferenceLine, ReferenceArea, 
 } from "recharts";
 import LoadingAnimation from "../LoadingAnimation";
 
@@ -180,12 +180,20 @@ export default function Timeline() {
               </div>
             </div>
 
-            <ResponsiveContainer width="100%" height={380}>
-              <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
+            <ResponsiveContainer width="100%" height={520}>
+              <LineChart data={chartData} margin={{ top: 10, right: 70, bottom: 10, left: 0 }}>
                 <XAxis dataKey="week" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis domain={[3, 8]} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                <ReferenceLine y={4} stroke="#16a34a" strokeDasharray="4 3" strokeOpacity={0.3} label={{ value: "Optimal floor", position: "right", fontSize: 10, fill: "#16a34a" }} />
-                <ReferenceLine y={6} stroke="#16a34a" strokeDasharray="4 3" strokeOpacity={0.3} label={{ value: "Optimal ceiling", position: "right", fontSize: 10, fill: "#16a34a" }} />
+                <YAxis domain={[1, 10]} ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+
+                {/* Zone bands — matches the Yerkes-Dodson zones on the Overview page */}
+                <ReferenceArea y1={1} y2={2} fill="#dc2626" fillOpacity={0.05} />
+                <ReferenceArea y1={2} y2={4} fill="#d97706" fillOpacity={0.05} />
+                <ReferenceArea y1={4} y2={6} fill="#16a34a" fillOpacity={0.07} />
+                <ReferenceArea y1={6} y2={8} fill="#d97706" fillOpacity={0.05} />
+                <ReferenceArea y1={8} y2={10} fill="#dc2626" fillOpacity={0.05} />
+
+                <ReferenceLine y={4} stroke="#16a34a" strokeDasharray="4 3" strokeOpacity={0.4} label={{ value: "Optimal floor", position: "right", fontSize: 10, fill: "#16a34a" }} />
+                <ReferenceLine y={6} stroke="#16a34a" strokeDasharray="4 3" strokeOpacity={0.4} label={{ value: "Optimal ceiling", position: "right", fontSize: 10, fill: "#16a34a" }} />
                 <Tooltip
                   content={({ active, payload, label }) => {
                     if (active && payload?.length) return (
