@@ -445,7 +445,11 @@ export default function Dashboard() {
                   const badge = getZoneBadge(t.arousal);
                   const color = getZoneColor(t.arousal);
                   return (
-                    <div key={t.name} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: i < teams.length - 1 ? "1px solid #f1f5f9" : "none" }}>
+                    <div key={t.name} 
+                      onClick={() => router.push(`/teams/${encodeURIComponent(t.name)}`)}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: i < teams.length - 1 ? "1px solid #f1f5f9" : "none" }}>
                       <span style={{ fontSize: 11, color: "#94a3b8", width: 16, textAlign: "right", flexShrink: 0 }}>{i + 1}</span>
                       <span style={{ width: 7, height: 7, borderRadius: "50%", background: color, flexShrink: 0 }} />
                       <span style={{ fontSize: 13, color: "#0f172a", flex: 1 }}>{t.name}</span>
