@@ -42,13 +42,6 @@ const curveData = Array.from({ length: 101 }, (_, i) => ({
   y: parseFloat(ydY(i / 10).toFixed(1)),
 }));
 
-const dimIcons = {
-  Social: "👥",
-  Workload: "💼",
-  Energy: "⚡",
-  Recovery: "❤️",
-  Motivation: "🎯",
-};
 
 const metricIcons = {
   "Cohort avg score": "📈",
@@ -489,7 +482,6 @@ export default function Dashboard() {
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                 {activeDimensions.map((d, i) => (
                   <div key={d.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: i < activeDimensions.length - 1 ? "1px solid #f1f5f9" : "none" }}>
-                    <span style={{ fontSize: 16, flexShrink: 0 }}>{dimIcons[d.label] || "📊"}</span>
                     <span style={{ fontSize: 13, color: "#374151", width: 80, flexShrink: 0 }}>{d.label}</span>
                     <div style={{ flex: 1, height: 6, background: "#f1f5f9", borderRadius: 3, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${(d.value / 10) * 100}%`, background: d.color, borderRadius: 3 }} />
