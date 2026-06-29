@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef} from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import {
@@ -33,6 +33,7 @@ export default function Timeline() {
   const [teamNames, setTeamNames] = useState([]);
   const [hoveredTeam, setHoveredTeam] = useState(null);
   const [hoveredPoint, setHoveredPoint] = useState(null);
+  const dotPositionsRef = useRef([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -84,6 +85,8 @@ export default function Timeline() {
     const trend = scores.length >= 2 ? scores[scores.length - 1] - scores[0] : 0;
     return { name, avg: avgScore, trend, color: TEAM_COLORS[i % TEAM_COLORS.length] };
   }).sort((a, b) => b.avg - a.avg);
+
+  dotPositionsRef.current = [];
 
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "#f8fafc", overflow: "hidden" }}>
@@ -181,7 +184,22 @@ export default function Timeline() {
               </div>
             </div>
 
-            <div style={{ position: "relative" }}>
+            <div
+              style={{ position: "relative" }}
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                let closest = null;
+                let closestDist = Infinity;
+                dotPositionsRef.current.forEach((p) => {
+                  const d = Math.hypot(p.x - mx, p.y - my);
+                  if (d < closestDist) { closestDist = d; closest = p; }
+                });
+                setHoveredPoint(closest && closestDist < 25 ? closest : null);
+              }}
+              onMouseLeave={() => setHoveredPoint(null)}
+            >
               <ResponsiveContainer width="100%" height={520}>
                 <LineChart data={chartData} margin={{ top: 10, right: 70, bottom: 10, left: 0 }}>
                   <XAxis dataKey="week" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -211,6 +229,15 @@ export default function Timeline() {
                             if (payload[dk] == null) return null;
                             const visible = hoveredTeam === null || hoveredTeam === dk;
                             if (!visible) return null;
+
+                            // Report this dot's position so the container-level
+                            // handler can pick whichever dot is truly nearest —
+                            // fixes overlapping/closely-packed dots fighting for hover.
+                            dotPositionsRef.current.push({
+                              team: dk, week: payload.week, value: payload[dk],
+                              x: cx, y: cy, color,
+                            });
+
                             const isActive = hoveredPoint && hoveredPoint.team === dk && hoveredPoint.week === payload.week;
                             return (
                               <circle
@@ -219,9 +246,7 @@ export default function Timeline() {
                                 r={isActive ? 8 : 5}
                                 fill={color}
                                 stroke="#fff" strokeWidth={2}
-                                style={{ cursor: "pointer" }}
-                                onMouseEnter={() => setHoveredPoint({ team: dk, week: payload.week, value: payload[dk], x: cx, y: cy, color })}
-                                onMouseLeave={() => setHoveredPoint(null)}
+                                style={{ pointerEvents: "none" }}
                               />
                             );
                           }}
@@ -242,6 +267,8 @@ export default function Timeline() {
                   background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,
                   padding: "10px 14px", fontSize: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
                   pointerEvents: "none", whiteSpace: "nowrap", zIndex: 10,
+                  transition: "left 0.08s ease-out, top 0.08s ease-out",
+                  animation: "fadeIn 0.1s ease-out",
                 }}>
                   <p style={{ color: "#94a3b8", margin: "0 0 4px", fontSize: 11 }}>{hoveredPoint.week}</p>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
