@@ -507,9 +507,17 @@ export default function Dashboard() {
             <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                 <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>Avg Score Trend — By Week</p>
-                <select style={{ fontSize: 12, padding: "5px 10px", border: "1px solid #e2e8f0", borderRadius: 6, background: "#fff", color: "#374151" }}>
-                  <option>All weeks</option>
-                </select>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    onClick={() => router.push("/timeline")}
+                    style={{
+                      fontSize: 11, fontWeight: 500, padding: "5px 10px", borderRadius: 6,
+                      border: "1px solid #e2e8f0", background: "#fff", color: "#16a34a",
+                      cursor: "pointer", whiteSpace: "nowrap",
+                    }}>
+                    View full timeline →
+                  </button>
+                </div>
               </div>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={trendData} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
@@ -522,7 +530,6 @@ export default function Dashboard() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-
           </div>
         </main>
       </div>
