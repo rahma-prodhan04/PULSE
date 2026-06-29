@@ -58,6 +58,22 @@ const curveData = Array.from({ length: 101 }, (_, i) => ({
   y: parseFloat(ydY(i / 10).toFixed(1)),
 }));
 
+const TOTAL_INTERNS = 69;
+
+function ResponseTick({ x, y, payload, dataMap }) {
+  const d = dataMap?.[payload.value];
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={12} textAnchor="middle" fontSize={10} fill="#64748b">{payload.value}</text>
+      {d && (
+        <text x={0} y={26} textAnchor="middle" fontSize={10} fontWeight={700} fill="#16a34a">
+          {d.engagementPct}% engagement
+        </text>
+      )}
+    </g>
+  );
+}
+
 
 const metricIcons = {
   "Cohort avg score": "📈",
@@ -172,7 +188,10 @@ export default function Dashboard() {
       label: getWeekLabel(week),
       total: Object.values(teamCounts).reduce((sum, n) => sum + n, 0),
       teamCounts,
-    }));
+    }))
+    .map(d => ({ ...d, engagementPct: Math.round((d.total / TOTAL_INTERNS) * 100) })); 
+
+  const breakdownByLabel = Object.fromEntries(responseBreakdown.map(d => [d.label, d]));
 
   // Sparkline data per metric
   const sparklines = {
@@ -571,10 +590,11 @@ export default function Dashboard() {
             <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: "0 0 14px", textTransform: "uppercase" }}>
               Response Breakdown — By Week
             </p>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={responseBreakdown} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
-                <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+            <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={responseBreakdown} margin={{ top: 10, right: 20, bottom: 28, left: 0 }}>
+                  <XAxis dataKey="label" interval={0} axisLine={false} tickLine={false}
+                    tick={<ResponseTick dataMap={breakdownByLabel} />} />
+                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip content={({ active, payload, label }) => {
                   if (active && payload?.length) {
                     const d = payload[0].payload;
@@ -593,7 +613,7 @@ export default function Dashboard() {
                   }
                   return null;
                 }} />
-                <Bar dataKey="total" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="total" fill="#16a34a" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
             <p style={{ fontSize: 11, color: "#94a3b8", margin: "8px 0 0" }}>
