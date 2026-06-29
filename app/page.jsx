@@ -523,7 +523,15 @@ export default function Dashboard() {
                 <LineChart data={trendData} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
                   <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis domain={[3, 8]} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(v) => [v.toFixed(2), "Score"]} />
+                  <Tooltip content={({ active, payload, label }) => {
+                    if (active && payload?.length) return (
+                      <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
+                        <p style={{ fontWeight: 700, color: "#0f172a", margin: "0 0 2px" }}>{label}</p>
+                        <p style={{ color: "#64748b", margin: 0 }}>Score: <b style={{ color: "#16a34a" }}>{payload[0].value.toFixed(2)}</b></p>
+                      </div>
+                    );
+                    return null;
+                  }} />
                   <Line type="monotone" dataKey="g" stroke="#16a34a" strokeWidth={2.5}
                     dot={{ r: 5, fill: "#16a34a", stroke: "#fff", strokeWidth: 2 }}
                     label={{ position: "top", fontSize: 11, fill: "#374151", fontWeight: 600 }} />
