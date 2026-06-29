@@ -212,8 +212,10 @@ export default function Timeline() {
                   <ReferenceArea y1={6} y2={8} fill="#d97706" fillOpacity={0.05} />
                   <ReferenceArea y1={8} y2={10} fill="#dc2626" fillOpacity={0.05} />
 
+                  <ReferenceLine y={2} stroke="#d97706" strokeDasharray="4 3" strokeOpacity={0.4} label={{ value: "Risk", position: "right", fontSize: 10, fill: "#d97706" }} />
                   <ReferenceLine y={4} stroke="#16a34a" strokeDasharray="4 3" strokeOpacity={0.4} label={{ value: "Optimal floor", position: "right", fontSize: 10, fill: "#16a34a" }} />
                   <ReferenceLine y={6} stroke="#16a34a" strokeDasharray="4 3" strokeOpacity={0.4} label={{ value: "Optimal ceiling", position: "right", fontSize: 10, fill: "#16a34a" }} />
+                  <ReferenceLine y={8} stroke="#d97706" strokeDasharray="4 3" strokeOpacity={0.4} label={{ value: "Risk", position: "right", fontSize: 10, fill: "#d97706" }} />
                   {teamNames.map((name, i) => {
                     const color = TEAM_COLORS[i % TEAM_COLORS.length];
                     return (
