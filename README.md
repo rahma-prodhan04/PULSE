@@ -1,5 +1,7 @@
 # Pulse
 
+<a href="https://pulse-three-amber.vercel.app/" target="_blank" rel="noopener noreferrer">Live demo</a>
+
 > A cohort wellness dashboard for intern program managers, built on the Yerkes-Dodson performance-arousal framework.
 
 Pulse turns anonymous weekly check-ins into a live signal of whether your intern cohort is in flow, burning out, or coasting under-stimulated. It tracks 5 wellness dimensions — workload, energy, recovery, motivation and social connection — and visualises where each team sits on the Yerkes-Dodson curve, helping managers spot patterns before they become problems.
