@@ -32,6 +32,7 @@ export default function Timeline() {
   const [chartData, setChartData] = useState([]);
   const [teamNames, setTeamNames] = useState([]);
   const [hoveredTeam, setHoveredTeam] = useState(null);
+  const [hoveredPoint, setHoveredPoint] = useState(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -180,61 +181,77 @@ export default function Timeline() {
               </div>
             </div>
 
-            <ResponsiveContainer width="100%" height={520}>
-              <LineChart data={chartData} margin={{ top: 10, right: 70, bottom: 10, left: 0 }}>
-                <XAxis dataKey="week" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis domain={[1, 10]} ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+            <div style={{ position: "relative" }}>
+              <ResponsiveContainer width="100%" height={520}>
+                <LineChart data={chartData} margin={{ top: 10, right: 70, bottom: 10, left: 0 }}>
+                  <XAxis dataKey="week" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[1, 10]} ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
 
-                {/* Zone bands — matches the Yerkes-Dodson zones on the Overview page */}
-                <ReferenceArea y1={1} y2={2} fill="#dc2626" fillOpacity={0.05} />
-                <ReferenceArea y1={2} y2={4} fill="#d97706" fillOpacity={0.05} />
-                <ReferenceArea y1={4} y2={6} fill="#16a34a" fillOpacity={0.07} />
-                <ReferenceArea y1={6} y2={8} fill="#d97706" fillOpacity={0.05} />
-                <ReferenceArea y1={8} y2={10} fill="#dc2626" fillOpacity={0.05} />
+                  {/* Zone bands — matches the Yerkes-Dodson zones on the Overview page */}
+                  <ReferenceArea y1={1} y2={2} fill="#dc2626" fillOpacity={0.05} />
+                  <ReferenceArea y1={2} y2={4} fill="#d97706" fillOpacity={0.05} />
+                  <ReferenceArea y1={4} y2={6} fill="#16a34a" fillOpacity={0.07} />
+                  <ReferenceArea y1={6} y2={8} fill="#d97706" fillOpacity={0.05} />
+                  <ReferenceArea y1={8} y2={10} fill="#dc2626" fillOpacity={0.05} />
 
-                <ReferenceLine y={4} stroke="#16a34a" strokeDasharray="4 3" strokeOpacity={0.4} label={{ value: "Optimal floor", position: "right", fontSize: 10, fill: "#16a34a" }} />
-                <ReferenceLine y={6} stroke="#16a34a" strokeDasharray="4 3" strokeOpacity={0.4} label={{ value: "Optimal ceiling", position: "right", fontSize: 10, fill: "#16a34a" }} />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (active && payload?.length) return (
-                      <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: "12px 16px", fontSize: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.1)", minWidth: 180 }}>
-                        <p style={{ fontWeight: 700, color: "#0f172a", margin: "0 0 8px" }}>{label}</p>
-                        {payload
-                          .filter(p => p.value !== null)
-                          .sort((a, b) => b.value - a.value)
-                          .map(p => (
-                            <div key={p.dataKey} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 4 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <span style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, display: "inline-block" }} />
-                                <span style={{ color: "#374151" }}>{p.dataKey}</span>
-                              </div>
-                              <span style={{ fontWeight: 600, color: "#0f172a" }}>{p.value}</span>
-                            </div>
-                          ))}
-                      </div>
+                  <ReferenceLine y={4} stroke="#16a34a" strokeDasharray="4 3" strokeOpacity={0.4} label={{ value: "Optimal floor", position: "right", fontSize: 10, fill: "#16a34a" }} />
+                  <ReferenceLine y={6} stroke="#16a34a" strokeDasharray="4 3" strokeOpacity={0.4} label={{ value: "Optimal ceiling", position: "right", fontSize: 10, fill: "#16a34a" }} />
+                  {teamNames.map((name, i) => {
+                    const color = TEAM_COLORS[i % TEAM_COLORS.length];
+                    return (
+                      <Line
+                          key={name}
+                          type="monotone"
+                          dataKey={name}
+                          stroke={color}
+                          strokeWidth={hoveredTeam === name ? 4 : hoveredTeam === null ? 2 : 1}
+                          strokeOpacity={hoveredTeam === name ? 1 : hoveredTeam === null ? 0.8 : 0.15}
+                          dot={(dotProps) => {
+                            const { cx, cy, payload, dataKey: dk, index } = dotProps;
+                            if (payload[dk] == null) return null;
+                            const visible = hoveredTeam === null || hoveredTeam === dk;
+                            if (!visible) return null;
+                            const isActive = hoveredPoint && hoveredPoint.team === dk && hoveredPoint.week === payload.week;
+                            return (
+                              <circle
+                                key={`dot-${dk}-${index}`}
+                                cx={cx} cy={cy}
+                                r={isActive ? 8 : 5}
+                                fill={color}
+                                stroke="#fff" strokeWidth={2}
+                                style={{ cursor: "pointer" }}
+                                onMouseEnter={() => setHoveredPoint({ team: dk, week: payload.week, value: payload[dk], x: cx, y: cy, color })}
+                                onMouseLeave={() => setHoveredPoint(null)}
+                              />
+                            );
+                          }}
+                          connectNulls
+                          isAnimationActive={false}
+                      />
                     );
-                    return null;
-                  }}
-                />
-                {teamNames.map((name, i) => (
-                <Line
-                    key={name}
-                    type="monotone"
-                    dataKey={name}
-                    stroke={TEAM_COLORS[i % TEAM_COLORS.length]}
-                    strokeWidth={hoveredTeam === name ? 4 : hoveredTeam === null ? 2 : 1}
-                    strokeOpacity={hoveredTeam === name ? 1 : hoveredTeam === null ? 0.8 : 0.15}
-                    dot={hoveredTeam === null || hoveredTeam === name
-                    ? { r: 5, fill: TEAM_COLORS[i % TEAM_COLORS.length], stroke: "#fff", strokeWidth: 2 }
-                    : { r: 0 }
-                    }
-                    activeDot={{ r: 7 }}
-                    connectNulls
-                    isAnimationActive={false}
-                />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
+                  })}
+                </LineChart>
+              </ResponsiveContainer>
+
+              {hoveredPoint && (
+                <div style={{
+                  position: "absolute",
+                  left: hoveredPoint.x,
+                  top: hoveredPoint.y,
+                  transform: "translate(-50%, -130%)",
+                  background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,
+                  padding: "10px 14px", fontSize: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+                  pointerEvents: "none", whiteSpace: "nowrap", zIndex: 10,
+                }}>
+                  <p style={{ color: "#94a3b8", margin: "0 0 4px", fontSize: 11 }}>{hoveredPoint.week}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: hoveredPoint.color, display: "inline-block" }} />
+                    <span style={{ fontWeight: 700, color: "#0f172a" }}>{hoveredPoint.team}</span>
+                    <span style={{ fontWeight: 600, color: hoveredPoint.color, marginLeft: 8 }}>{hoveredPoint.value}</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Team summary cards */}
