@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import { useRouter } from "next/navigation";
 import {
   ScatterChart, Scatter, XAxis, YAxis, ResponsiveContainer,
-  Tooltip, LineChart, Line, ReferenceLine, AreaChart, Area, ReferenceArea
+  Tooltip, LineChart, Line, ReferenceLine, AreaChart, Area, ReferenceArea, Bar, BarChart
 } from "recharts";
 import LoadingAnimation from "./LoadingAnimation";
 import ExportButton from "./ExportButton";
@@ -139,6 +139,24 @@ export default function Dashboard() {
     .map(([week, vals]) => ({ week, label: week, v: avg(vals), g: avg(vals) }));
 
   const weeks = trendData.map(t => t.week);
+
+  // Response counts per week, broken down by team
+  const responseBreakdown = Object.entries(
+    responses.reduce((acc, r) => {
+      const wk = r.week_start;
+      const team = r.teams?.name || "Unknown";
+      if (!acc[wk]) acc[wk] = {};
+      acc[wk][team] = (acc[wk][team] || 0) + 1;
+      return acc;
+    }, {})
+  )
+    .sort(([a], [b]) => new Date(a) - new Date(b))
+    .map(([week, teamCounts]) => ({
+      week,
+      label: week,
+      total: Object.values(teamCounts).reduce((sum, n) => sum + n, 0),
+      teamCounts,
+    }));
 
   // Sparkline data per metric
   const sparklines = {
@@ -531,6 +549,40 @@ export default function Dashboard() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
+          </div>
+          {/* Response breakdown */}
+          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: "0 0 14px", textTransform: "uppercase" }}>
+              Response Breakdown — By Week
+            </p>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={responseBreakdown} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
+                <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip content={({ active, payload, label }) => {
+                  if (active && payload?.length) {
+                    const d = payload[0].payload;
+                    const breakdown = Object.entries(d.teamCounts).sort(([, a], [, b]) => b - a);
+                    return (
+                      <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "10px 14px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)", minWidth: 140 }}>
+                        <p style={{ fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>{label} · {d.total} total</p>
+                        {breakdown.map(([name, count]) => (
+                          <div key={name} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                            <span style={{ color: "#64748b" }}>{name}</span>
+                            <span style={{ fontWeight: 600, color: "#0f172a" }}>{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return null;
+                }} />
+                <Bar dataKey="total" fill="#6366f1" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+            <p style={{ fontSize: 11, color: "#94a3b8", margin: "8px 0 0" }}>
+              Hover any bar to see the per-team breakdown for that week
+            </p>
           </div>
         </main>
       </div>
