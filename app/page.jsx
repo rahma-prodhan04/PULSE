@@ -37,6 +37,22 @@ function avg(arr) {
   return parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2));
 }
 
+function getWeekNumber(dateStr) {
+  const programStart = new Date("2026-06-01");
+  const current = new Date(dateStr);
+  const diff = Math.round((current - programStart) / (7 * 24 * 60 * 60 * 1000));
+  return diff + 3;
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + "T00:00:00"); // avoids timezone rollback to the previous day
+  return d.toLocaleDateString("en-AU", { month: "short", day: "numeric" }); // e.g. "1 Jun"
+}
+
+function getWeekLabel(dateStr) {
+  return `W${getWeekNumber(dateStr)} - ${formatDate(dateStr)}`;
+}
+
 const curveData = Array.from({ length: 101 }, (_, i) => ({
   x: parseFloat((i / 10).toFixed(1)),
   y: parseFloat(ydY(i / 10).toFixed(1)),
@@ -136,7 +152,7 @@ export default function Dashboard() {
       return acc;
     }, {})
   ).sort(([a], [b]) => new Date(a) - new Date(b))
-    .map(([week, vals]) => ({ week, label: week, v: avg(vals), g: avg(vals) }));
+    .map(([week, vals]) => ({ week, label: getWeekLabel(week), v: avg(vals), g: avg(vals) }));
 
   const weeks = trendData.map(t => t.week);
 
@@ -153,7 +169,7 @@ export default function Dashboard() {
     .sort(([a], [b]) => new Date(a) - new Date(b))
     .map(([week, teamCounts]) => ({
       week,
-      label: week,
+      label: getWeekLabel(week),
       total: Object.values(teamCounts).reduce((sum, n) => sum + n, 0),
       teamCounts,
     }));
@@ -565,7 +581,7 @@ export default function Dashboard() {
                     const breakdown = Object.entries(d.teamCounts).sort(([, a], [, b]) => b - a);
                     return (
                       <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "10px 14px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)", minWidth: 140 }}>
-                        <p style={{ fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>{label} · {d.total} total</p>
+                        <p style={{ fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>{label}: {d.total} total</p>
                         {breakdown.map(([name, count]) => (
                           <div key={name} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                             <span style={{ color: "#64748b" }}>{name}</span>
