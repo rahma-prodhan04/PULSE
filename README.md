@@ -1,6 +1,6 @@
 # Pulse
 
-Web app link: https://pulse-three-amber.vercel.app/
+<a href="https://pulse-three-amber.vercel.app/" target="_blank" rel="noopener noreferrer">Live demo</a>
 
 > A cohort wellness dashboard for intern program managers, built on the Yerkes-Dodson performance-arousal framework.
 
