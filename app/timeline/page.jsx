@@ -201,7 +201,7 @@ export default function Timeline() {
               onMouseLeave={() => setHoveredPoint(null)}
             >
               <ResponsiveContainer width="100%" height={520}>
-                <LineChart data={chartData} margin={{ top: 10, right: 70, bottom: 10, left: 0 }}>
+                <LineChart data={chartData} margin={{ top: 10, right: 95, bottom: 10, left: 0 }}>
                   <XAxis dataKey="week" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis domain={[1, 10]} ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
 

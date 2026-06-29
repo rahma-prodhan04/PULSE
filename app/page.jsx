@@ -283,7 +283,7 @@ export default function Dashboard() {
                   if (e.target.value) router.push(`/week/${e.target.value}`);
                 }}
               >
-                <option value="">All weeks▾</option>
+                <option value="">All weeks</option>
                 {weeks.map((w, i) => <option key={w} value={w}>Week {i + 3}</option>)}
               </select>
               <ExportButton
