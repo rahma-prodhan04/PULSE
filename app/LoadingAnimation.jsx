@@ -8,7 +8,7 @@ export default function LoadingAnimation({ onDone }) {
 
   useEffect(() => {
     if (onDone) {
-      const timer = setTimeout(onDone, 3000);
+      const timer = setTimeout(onDone, 1000);
       return () => clearTimeout(timer);
     }
   }, [onDone]);
