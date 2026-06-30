@@ -67,6 +67,7 @@ export default function Timeline() {
           allTeams.forEach(team => {
             const scores = teams[team] || [];
             row[team] = scores.length ? avg(scores) : null;
+            row[`${team}__count`] = scores.length;
           });
           return row;
         });
@@ -237,6 +238,7 @@ export default function Timeline() {
                             // fixes overlapping/closely-packed dots fighting for hover.
                             dotPositionsRef.current.push({
                               team: dk, week: payload.week, value: payload[dk],
+                              count: payload[`${dk}__count`] ?? 0,
                               x: cx, y: cy, color,
                             });
 
@@ -278,6 +280,9 @@ export default function Timeline() {
                     <span style={{ fontWeight: 700, color: "#0f172a" }}>{hoveredPoint.team}</span>
                     <span style={{ fontWeight: 600, color: hoveredPoint.color, marginLeft: 8 }}>{hoveredPoint.value}</span>
                   </div>
+                  <p style={{ color: "#94a3b8", margin: "4px 0 0", fontSize: 11 }}>
+                    {hoveredPoint.count} {hoveredPoint.count === 1 ? "response" : "responses"}
+                  </p>
                 </div>
               )}
             </div>
