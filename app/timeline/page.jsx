@@ -143,7 +143,14 @@ export default function Timeline() {
         <header style={{ padding: "20px 28px 16px", background: "#fff", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
             <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <button onClick={() => router.push("/")}
+                  style={{ fontSize: 13, color: "#64748b", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                  ← Overview
+                </button>
+                <span style={{ color: "#e2e8f0" }}>/</span>
               <h1 style={{ fontSize: 24, fontWeight: 700, color: "#0f172a", margin: 0 }}>Timeline</h1>
+              </div>
               <p style={{ fontSize: 13, color: "#64748b", margin: "4px 0 0" }}>
                 {teamNames.length} teams · {chartData.length} weeks · all scores over time
               </p>
