@@ -111,6 +111,7 @@ export default function Dashboard() {
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState("Cohort average");
   const [weekFilter, setWeekFilter] = useState("");
+  const [curveWeek, setCurveWeek] = useState("all");
   const exportRef = useRef(null);
 
   useEffect(() => {
@@ -156,6 +157,32 @@ export default function Dashboard() {
     { label: "Recovery", value: avg(teams.map(t => t.recovery)) },
     { label: "Motivation", value: avg(teams.map(t => t.motivation)) },
   ].map(d => ({ ...d, color: getDimColor(d.value) })) : [];
+  
+  // Team positions on the curve for the selected week (or all-time if "all")
+  const curveTeams = (() => {
+    const rows = curveWeek === "all"
+      ? responses
+      : responses.filter(r => r.week_start === curveWeek);
+
+    const map = {};
+    rows.forEach(r => {
+      const name = r.teams?.name || "Unknown";
+      if (!map[name]) map[name] = { workload: [], energy: [], recovery: [], motivation: [], social: [] };
+      map[name].workload.push(r.q1_workload);
+      map[name].energy.push(r.q2_energy);
+      map[name].recovery.push(r.q3_recovery);
+      map[name].motivation.push(r.q4_motivation);
+      map[name].social.push(r.q5_social);
+    });
+
+    return Object.entries(map).map(([name, dims]) => {
+      const workload = avg(dims.workload), energy = avg(dims.energy),
+        recovery = avg(dims.recovery), motivation = avg(dims.motivation), social = avg(dims.social);
+      const overall = avg([workload, energy, recovery, motivation, social]);
+      const arousal = avg([workload, energy, recovery, motivation]);
+      return { name, overall, arousal, g: overall, perf: ydY(arousal), color: getZoneColor(arousal) };
+    });
+  })();
 
   const strongestDim = cohortDimensions.length ? [...cohortDimensions].sort((a, b) => b.value - a.value)[0] : null;
   const weakestDim = cohortDimensions.length ? [...cohortDimensions].sort((a, b) => a.value - b.value)[0] : null;
@@ -365,6 +392,16 @@ export default function Dashboard() {
                   </p>
                   <span style={{ fontSize: 12, color: "#94a3b8" }}>ⓘ</span>
                 </div>
+                <select
+                  style={{ fontSize: 12, padding: "5px 10px", border: "1px solid #e2e8f0", borderRadius: 6, background: "#fff", color: "#374151" }}
+                  value={curveWeek}
+                  onChange={e => setCurveWeek(e.target.value)}
+                >
+                  <option value="all">All weeks (avg)</option>
+                  {trendData.map(t => (
+                    <option key={t.week} value={t.week}>{t.label}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Zone labels */}
@@ -470,7 +507,7 @@ export default function Dashboard() {
 
                 {/* Team dots */}
                 <Scatter
-                  data={teams.map(t => ({ x: t.arousal, y: t.perf, name: t.name, g: t.g, color: getZoneColor(t.arousal) }))}
+                  data={curveTeams.map(t => ({ x: t.arousal, y: t.perf, name: t.name, g: t.g, color: getZoneColor(t.arousal) }))}
                   fill="#16a34a"
                   shape={(props) => {
                     return <circle cx={props.cx} cy={props.cy} r={7}
