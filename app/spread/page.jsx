@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { useCohort } from "../../lib/CohortContext";
@@ -43,21 +43,7 @@ const TEAM_COLORS = [
   "#0891b2", "#db2777", "#65a30d", "#ea580c", "#0f172a", "#64748b",
 ];
 
-// Chart margins — must match the ScatterChart margin prop exactly
-const CHART_MARGIN = { top: 20, right: 30, bottom: 30, left: 20 };
-// Y domain — must match the YAxis domain prop exactly
-const Y_DOMAIN = [-20, 115];
-
-function arousalToPixel(arousal, canvasW) {
-  const plotW = canvasW - CHART_MARGIN.left - CHART_MARGIN.right;
-  return CHART_MARGIN.left + (arousal / 10) * plotW;
-}
-
-function yValueToPixel(y, canvasH) {
-  const plotH = canvasH - CHART_MARGIN.top - CHART_MARGIN.bottom;
-  const [yMin, yMax] = Y_DOMAIN;
-  return CHART_MARGIN.top + (1 - (y - yMin) / (yMax - yMin)) * plotH;
-}
+const Y_DOMAIN = [0, 115];
 
 export default function SpreadView() {
   const router = useRouter();
@@ -88,112 +74,132 @@ export default function SpreadView() {
     fetchData();
   }, [selectedCohortId]);
 
-  useEffect(() => {
+  const drawHeatmap = useCallback(() => {
     const canvas = heatCanvasRef.current;
     const wrapper = chartWrapperRef.current;
     if (!canvas || !wrapper) return;
 
-    const draw = () => {
-      const rect = wrapper.getBoundingClientRect();
-      const W = Math.round(rect.width);
-      const H = Math.round(rect.height);
-      if (!W || !H) return;
+    // Find the actual Recharts plot area by querying the SVG clipPath rect
+    // This gives us exact pixel coordinates regardless of YAxis hidden width
+    const svg = wrapper.querySelector("svg");
+    if (!svg) return;
 
-      canvas.width = W;
-      canvas.height = H;
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const W = Math.round(wrapperRect.width);
+    const H = Math.round(wrapperRect.height);
+    if (!W || !H) return;
 
-      const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, W, H);
+    canvas.width = W;
+    canvas.height = H;
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
 
-      const rows = selectedWeek === "all"
-        ? responses
-        : responses.filter(r => r.week_start === selectedWeek);
+    // Find the inner plot area rect from Recharts SVG structure
+    // Recharts renders a <clipPath><rect> that exactly bounds the plot area
+    let plotX = 0, plotY = 0, plotW = W, plotH = H;
+    const clipRect = svg.querySelector("defs clipPath rect");
+    if (clipRect) {
+      plotX = parseFloat(clipRect.getAttribute("x") || "0");
+      plotY = parseFloat(clipRect.getAttribute("y") || "0");
+      plotW = parseFloat(clipRect.getAttribute("width") || W);
+      plotH = parseFloat(clipRect.getAttribute("height") || H);
+    }
 
-      if (!rows.length) return;
-
-      // Pass 1 — build density map on offscreen canvas
-      const density = document.createElement("canvas");
-      density.width = W;
-      density.height = H;
-      const dCtx = density.getContext("2d");
-
-      // Green base — whole chart starts green
-      dCtx.fillStyle = "#16a34a";
-      dCtx.globalAlpha = 0.18;
-      dCtx.fillRect(0, 0, W, H);
-      dCtx.globalAlpha = 1;
-
-      // Compute centroid
-      const avgArousal = rows.reduce((sum, r) =>
-        sum + avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation]), 0
-      ) / rows.length;
-      const centroidPx = arousalToPixel(avgArousal, W);
-      const centroidPy = yValueToPixel(ydY(avgArousal), H);
-
-      // Max possible distance from centroid to any corner — for normalisation
-      const maxDist = Math.hypot(
-        Math.max(centroidPx, W - centroidPx),
-        Math.max(centroidPy, H - centroidPy)
-      );
-
-      // Each dot emits a red blob — intensity scales with proximity to centroid
-      rows.forEach(r => {
-        const arousal = avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation]);
-        const px = arousalToPixel(arousal, W);
-        const py = yValueToPixel(ydY(arousal), H);
-
-        const dist = Math.hypot(px - centroidPx, py - centroidPy);
-        const proximity = 1 - Math.min(dist / maxDist, 1); // 1 = at centroid, 0 = far
-        const intensity = 0.04 + proximity * 0.22;
-        const blobR = W * (0.06 + proximity * 0.06);
-
-        const grad = dCtx.createRadialGradient(px, py, 0, px, py, blobR);
-        grad.addColorStop(0, `rgba(255,255,255,${intensity.toFixed(3)})`);
-        grad.addColorStop(0.5, `rgba(255,255,255,${(intensity * 0.3).toFixed(3)})`);
-        grad.addColorStop(1, "rgba(0,0,0,0)");
-        dCtx.beginPath();
-        dCtx.arc(px, py, blobR, 0, Math.PI * 2);
-        dCtx.fillStyle = grad;
-        dCtx.fill();
-      });
-
-      // Pass 2 — colorize: green base, red builds near centroid
-      const src = dCtx.getImageData(0, 0, W, H).data;
-      const out = ctx.createImageData(W, H);
-      const dst = out.data;
-
-      for (let i = 0; i < src.length; i += 4) {
-        const v = src[i] / 255;
-
-        let rr, g, b, a;
-        if (v < 0.08) {
-          // background green
-          rr = 22; g = 163; b = 74; a = 180;
-        } else if (v < 0.35) {
-          // green → yellow-green
-          const t = (v - 0.08) / 0.27;
-          rr = Math.round(22 + 180 * t); g = Math.round(163 + 17 * t); b = Math.round(74 - 74 * t);
-          a = Math.round(180 + 40 * t);
-        } else if (v < 0.65) {
-          // yellow → orange
-          const t = (v - 0.35) / 0.3;
-          rr = Math.round(202 + 53 * t); g = Math.round(180 - 80 * t); b = 0;
-          a = Math.round(210 + 30 * t);
-        } else {
-          // deep red — only where many close-to-centroid dots cluster
-          const t = (v - 0.65) / 0.35;
-          rr = 255; g = Math.round(100 * (1 - t)); b = 0;
-          a = Math.min(255, Math.round(240 + 15 * t));
-        }
-        dst[i] = rr; dst[i + 1] = g; dst[i + 2] = b; dst[i + 3] = a;
-      }
-
-      ctx.putImageData(out, 0, 0);
+    // Convert arousal (0-10) and y-value to canvas pixel using actual plot bounds
+    const toPixel = (arousal, yVal) => {
+      const px = plotX + (arousal / 10) * plotW;
+      const [yMin, yMax] = Y_DOMAIN;
+      const py = plotY + (1 - (yVal - yMin) / (yMax - yMin)) * plotH;
+      return { px, py };
     };
 
-    const raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
+    const rows = selectedWeek === "all"
+      ? responses
+      : responses.filter(r => r.week_start === selectedWeek);
+
+    if (!rows.length) return;
+
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, W, H);
+
+    const density = document.createElement("canvas");
+    density.width = W;
+    density.height = H;
+    const dCtx = density.getContext("2d");
+
+    // Green base
+    dCtx.fillStyle = "#16a34a";
+    dCtx.globalAlpha = 0.18;
+    dCtx.fillRect(0, 0, W, H);
+    dCtx.globalAlpha = 1;
+
+    // Compute centroid
+    const avgArousal = rows.reduce((sum, r) =>
+      sum + avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation]), 0
+    ) / rows.length;
+    const { px: centroidPx, py: centroidPy } = toPixel(avgArousal, ydY(avgArousal));
+
+    const maxDist = Math.hypot(
+      Math.max(centroidPx, W - centroidPx),
+      Math.max(centroidPy, H - centroidPy)
+    );
+
+    // Each dot emits a red blob — intensity scales with proximity to centroid
+    rows.forEach(r => {
+      const arousal = avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation]);
+      const { px, py } = toPixel(arousal, ydY(arousal));
+
+      const dist = Math.hypot(px - centroidPx, py - centroidPy);
+      const proximity = 1 - Math.min(dist / maxDist, 1);
+      const intensity = 0.015 + proximity * 0.08;
+      const blobR = W * (0.04 + proximity * 0.03);
+
+      const grad = dCtx.createRadialGradient(px, py, 0, px, py, blobR);
+      grad.addColorStop(0,   `rgba(255,255,255,${intensity.toFixed(3)})`);
+      grad.addColorStop(0.3, `rgba(255,255,255,${(intensity * 0.5).toFixed(3)})`);
+      grad.addColorStop(0.7, `rgba(255,255,255,${(intensity * 0.15).toFixed(3)})`);
+      grad.addColorStop(1,   "rgba(0,0,0,0)");
+      dCtx.beginPath();
+      dCtx.arc(px, py, blobR, 0, Math.PI * 2);
+      dCtx.fillStyle = grad;
+      dCtx.fill();
+    });
+
+    // Colorize pass
+    const src = dCtx.getImageData(0, 0, W, H).data;
+    const out = ctx.createImageData(W, H);
+    const dst = out.data;
+
+    for (let i = 0; i < src.length; i += 4) {
+      const v = src[i] / 255;
+      let rr, g, b, a;
+      if (v < 0.08) {
+        rr = 22; g = 163; b = 74; a = 180;
+      } else if (v < 0.35) {
+        const t = (v - 0.08) / 0.27;
+        rr = Math.round(22 + 180 * t); g = Math.round(163 + 17 * t); b = Math.round(74 - 74 * t);
+        a = Math.round(180 + 40 * t);
+      } else if (v < 0.65) {
+        const t = (v - 0.35) / 0.3;
+        rr = Math.round(202 + 53 * t); g = Math.round(180 - 80 * t); b = 0;
+        a = Math.round(210 + 30 * t);
+      } else {
+        const t = (v - 0.65) / 0.35;
+        rr = 255; g = Math.round(100 * (1 - t)); b = 0;
+        a = Math.min(255, Math.round(240 + 15 * t));
+      }
+      dst[i] = rr; dst[i + 1] = g; dst[i + 2] = b; dst[i + 3] = a;
+    }
+
+    ctx.putImageData(out, 0, 0);
   }, [responses, selectedWeek]);
+
+  // Draw after render so Recharts SVG exists in DOM
+  useEffect(() => {
+    // Small delay to ensure Recharts has fully rendered its SVG
+    const timer = setTimeout(drawHeatmap, 50);
+    return () => clearTimeout(timer);
+  }, [drawHeatmap]);
 
   const teamColorMap = Object.fromEntries(
     teamNames.map((name, i) => [name, TEAM_COLORS[i % TEAM_COLORS.length]])
@@ -239,7 +245,6 @@ export default function SpreadView() {
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "#f8fafc", overflow: "hidden" }}>
 
-      {/* Sidebar */}
       <aside style={{ width: 200, background: "#0a2818", display: "flex", flexDirection: "column", flexShrink: 0 }}>
         <div style={{ padding: "24px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
@@ -300,7 +305,6 @@ export default function SpreadView() {
         </div>
       </aside>
 
-      {/* Main */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
         <header style={{ padding: "20px 28px 16px", background: "#fff", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
@@ -333,7 +337,6 @@ export default function SpreadView() {
 
         <main style={{ flex: 1, overflowY: "auto", padding: "20px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
 
-          {/* Zone summary cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
             {[
               { zone: "Optimal", color: "#16a34a", range: "Arousal 4–6" },
@@ -359,7 +362,6 @@ export default function SpreadView() {
             })}
           </div>
 
-          {/* Curve + heatmap overlay combined */}
           <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -382,26 +384,22 @@ export default function SpreadView() {
               ))}
             </div>
 
-            {/* Chart wrapper — heatmap canvas sits behind SVG chart */}
             <div ref={chartWrapperRef} style={{ position: "relative", height: chartHeight }}>
-
-              {/* Heatmap canvas — behind everything */}
               <canvas
                 ref={heatCanvasRef}
                 style={{
                   position: "absolute", top: 0, left: 0,
-                  width: "100%", height: "100%",
                   pointerEvents: "none", zIndex: 0,
+                  display: "block",
                 }}
               />
 
-              {/* Recharts SVG — on top, with transparent background */}
               <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 1 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart margin={CHART_MARGIN}>
+                  <ScatterChart margin={{ top: 20, right: 30, bottom: 30, left: 10 }}>
                     <XAxis dataKey="x" type="number" domain={[0, 10]} tickCount={6} tick={{ fontSize: 11 }}
                       label={{ value: "Arousal level", position: "insideBottom", offset: -10, fontSize: 11, fill: "#94a3b8" }} />
-                    <YAxis dataKey="y" type="number" domain={Y_DOMAIN} hide />
+                    <YAxis dataKey="y" type="number" domain={Y_DOMAIN} hide width={0} />
                     <Tooltip content={({ active, payload }) => {
                       if (active && payload?.length) {
                         const d = payload[0].payload;
@@ -430,18 +428,16 @@ export default function SpreadView() {
                     <ReferenceLine x={6} stroke="#e2e8f0" strokeDasharray="4 3" strokeWidth={1} />
                     <ReferenceLine x={8} stroke="#e2e8f0" strokeDasharray="4 3" strokeWidth={1} />
 
-                    {/* Curve segments */}
                     <Scatter data={curveData.filter(d => d.x <= 2)} line={{ stroke: "#dc2626", strokeWidth: 2.5 }} shape={() => <></>} />
                     <Scatter data={curveData.filter(d => d.x >= 2 && d.x <= 4)} line={{ stroke: "#d97706", strokeWidth: 2.5 }} shape={() => <></>} />
                     <Scatter data={curveData.filter(d => d.x >= 4 && d.x <= 6)} line={{ stroke: "#16a34a", strokeWidth: 2.5 }} shape={() => <></>} />
                     <Scatter data={curveData.filter(d => d.x >= 6 && d.x <= 8)} line={{ stroke: "#d97706", strokeWidth: 2.5 }} shape={() => <></>} />
                     <Scatter data={curveData.filter(d => d.x >= 8)} line={{ stroke: "#dc2626", strokeWidth: 2.5 }} shape={() => <></>} />
 
-                    {/* Team dots spread around the curve */}
                     <Scatter
                       data={dots.map((d, i) => ({
                         ...d,
-                        y: ydY(d.x) + ((i * 13.7) % 40) - 20,
+                        y: ydY(d.x) + ((i * 13.7) % 6) - 3,
                       }))}
                       shape={(props) => (
                         <circle
@@ -457,7 +453,6 @@ export default function SpreadView() {
               </div>
             </div>
 
-            {/* Legend */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
               {teamNames.map((name, i) => (
                 <span key={name} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#64748b" }}>
