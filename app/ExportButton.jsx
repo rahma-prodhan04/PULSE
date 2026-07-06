@@ -16,9 +16,106 @@ function buildCurvePoints(W, H, topPad) {
   }).join(" ");
 }
 
+function PrintHeader({ exportedAt }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <svg width="28" height="28" viewBox="0 0 28 28" style={{ display: "block", flexShrink: 0 }}>
+          <rect width="28" height="28" rx="6" fill="#16a34a" />
+          <text x="14" y="19" textAnchor="middle" dominantBaseline="auto" fontSize="13" fontWeight="700" fill="#ffffff" fontFamily="system-ui, sans-serif">P</text>
+        </svg>
+        <span style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", lineHeight: "28px" }}>Pulse</span>
+        <span style={{ fontSize: 12, color: "#94a3b8", lineHeight: "28px" }}>Culture Health Check</span>
+      </div>
+      <span style={{ fontSize: 12, color: "#94a3b8" }}>{exportedAt}</span>
+    </div>
+  );
+}
+
+function TeamScoresSVG({ teams, getZoneColor, getZoneLabel }) {
+  const ROW_H = 26;
+  const W = 380;
+  const H = teams.length * ROW_H + 4;
+  const X_RANK = 18, X_DOT = 34, X_NAME = 46, X_BAR = 210, BAR_W = 80, X_SCORE = 302, X_BADGE = 330;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
+      {teams.map((t, i) => {
+        const color = getZoneColor(t.arousal);
+        const label = i === 0 ? "Top" : getZoneLabel(t.arousal);
+        const bgColor = i === 0 ? "#fef3c7" : color + "22";
+        const txtColor = i === 0 ? "#92400e" : color;
+        const y = i * ROW_H;
+        const midY = y + ROW_H / 2;
+        const barFill = (t.overall / 10) * BAR_W;
+        return (
+          <g key={t.name}>
+            {i < teams.length - 1 && <line x1={0} y1={y + ROW_H} x2={W} y2={y + ROW_H} stroke="#f1f5f9" strokeWidth="1" />}
+            <text x={X_RANK} y={midY + 4} textAnchor="end" fontSize={10} fill="#94a3b8">{i + 1}</text>
+            <circle cx={X_DOT} cy={midY} r={4} fill={color} />
+            <text x={X_NAME} y={midY + 4} fontSize={12} fill="#0f172a">{t.name}</text>
+            <rect x={X_BAR} y={midY - 3} width={BAR_W} height={5} rx={2} fill="#f1f5f9" />
+            <rect x={X_BAR} y={midY - 3} width={barFill} height={5} rx={2} fill={color} />
+            <text x={X_SCORE} y={midY + 4} fontSize={12} fontWeight="600" fill="#0f172a">{t.overall}</text>
+            <rect x={X_BADGE} y={midY - 9} width={46} height={17} rx={8} fill={bgColor} />
+            <text x={X_BADGE + 23} y={midY + 4} textAnchor="middle" fontSize={9} fontWeight="600" fill={txtColor}>{label}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function TeamScoresDisplay({ teams, getZoneColor }) {
+  if (teams.length === 0) return <p style={{ fontSize: 12, color: "#94a3b8" }}>No team data</p>;
+
+  const W = 560, H = 180, pad = { t: 20, r: 20, b: 50, l: 40 };
+  const innerW = W - pad.l - pad.r;
+  const innerH = H - pad.t - pad.b;
+  const barW = Math.max(innerW / teams.length * 0.7, 20);
+  const barSpacing = innerW / teams.length;
+
+  const maxScore = 10;
+  const yPos = (score) => pad.t + innerH - (score / maxScore) * innerH;
+  const xPos = (i) => pad.l + (i + 0.5) * barSpacing;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
+      {[0, 2.5, 5, 7.5, 10].map((v) => (
+        <g key={v}>
+          <line x1={pad.l} y1={yPos(v)} x2={W - pad.r} y2={yPos(v)} stroke="#f1f5f9" strokeWidth="1" />
+          <text x={pad.l - 8} y={yPos(v) + 3} textAnchor="end" fontSize={9} fill="#94a3b8">{v}</text>
+        </g>
+      ))}
+
+      {teams.map((t, i) => {
+        const color = getZoneColor(t.arousal);
+        const x = xPos(i) - barW / 2;
+        const y = yPos(t.overall);
+        const barHeight = (t.overall / maxScore) * innerH;
+
+        return (
+          <g key={t.name}>
+            <rect x={x} y={y} width={barW} height={barHeight} fill={color} rx="3" ry="3" />
+            <text x={xPos(i)} y={y - 5} textAnchor="middle" fontSize={10} fontWeight="600" fill="#0f172a">
+              {t.overall}
+            </text>
+            <text x={xPos(i)} y={H - 8} textAnchor="middle" fontSize={9} fill="#64748b">
+              {t.name}
+            </text>
+          </g>
+        );
+      })}
+
+      <line x1={pad.l} y1={pad.t} x2={pad.l} y2={H - pad.b} stroke="#e2e8f0" strokeWidth="1" />
+      <line x1={pad.l} y1={H - pad.b} x2={W - pad.r} y2={H - pad.b} stroke="#e2e8f0" strokeWidth="1" />
+    </svg>
+  );
+}
+
 export default function ExportButton({ exportData, filename = "PULSE_Dashboard.pdf", page2Chart = "trend" }) {
   const [exporting, setExporting] = useState(false);
-  const topRef    = useRef(null);
+  const topRef = useRef(null);
   const bottomRef = useRef(null);
 
   async function exportToPDF() {
@@ -96,107 +193,7 @@ export default function ExportButton({ exportData, filename = "PULSE_Dashboard.p
 
   const SVG_W = 500, SVG_H = 180, SVG_TOP_PAD = 28, SVG_BOT_PAD = 30;
   const curvePoints = buildCurvePoints(SVG_W, SVG_H, SVG_TOP_PAD);
-
-  const PrintHeader = () => (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <svg width="28" height="28" viewBox="0 0 28 28" style={{ display: "block", flexShrink: 0 }}>
-          <rect width="28" height="28" rx="6" fill="#16a34a" />
-          <text x="14" y="19" textAnchor="middle" dominantBaseline="auto" fontSize="13" fontWeight="700" fill="#ffffff" fontFamily="system-ui, sans-serif">P</text>
-        </svg>
-        <span style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", lineHeight: "28px" }}>Pulse</span>
-        <span style={{ fontSize: 12, color: "#94a3b8", lineHeight: "28px" }}>Culture Health Check</span>
-      </div>
-      <span style={{ fontSize: 12, color: "#94a3b8" }}>
-        Exported {new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
-      </span>
-    </div>
-  );
-
-  const TeamScoresSVG = () => {
-    const ROW_H   = 26;
-    const W       = 380;
-    const H       = teams.length * ROW_H + 4;
-    const X_RANK  = 18, X_DOT = 34, X_NAME = 46, X_BAR = 210, BAR_W = 80, X_SCORE = 302, X_BADGE = 330;
-
-    return (
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
-        {teams.map((t, i) => {
-          const color    = getZoneColor(t.arousal);
-          const label    = i === 0 ? "Top" : getZoneLabel(t.arousal);
-          const bgColor  = i === 0 ? "#fef3c7" : color + "22";
-          const txtColor = i === 0 ? "#92400e" : color;
-          const y        = i * ROW_H;
-          const midY     = y + ROW_H / 2;
-          const barFill  = (t.overall / 10) * BAR_W;
-          return (
-            <g key={t.name}>
-              {i < teams.length - 1 && <line x1={0} y1={y + ROW_H} x2={W} y2={y + ROW_H} stroke="#f1f5f9" strokeWidth="1" />}
-              <text x={X_RANK} y={midY + 4} textAnchor="end" fontSize={10} fill="#94a3b8">{i + 1}</text>
-              <circle cx={X_DOT} cy={midY} r={4} fill={color} />
-              <text x={X_NAME} y={midY + 4} fontSize={12} fill="#0f172a">{t.name}</text>
-              <rect x={X_BAR} y={midY - 3} width={BAR_W} height={5} rx={2} fill="#f1f5f9" />
-              <rect x={X_BAR} y={midY - 3} width={barFill} height={5} rx={2} fill={color} />
-              <text x={X_SCORE} y={midY + 4} fontSize={12} fontWeight="600" fill="#0f172a">{t.overall}</text>
-              <rect x={X_BADGE} y={midY - 9} width={46} height={17} rx={8} fill={bgColor} />
-              <text x={X_BADGE + 23} y={midY + 4} textAnchor="middle" fontSize={9} fontWeight="600" fill={txtColor}>{label}</text>
-            </g>
-          );
-        })}
-      </svg>
-    );
-  };
-
-  const TeamScoresDisplay = () => {
-    if (teams.length === 0) return <p style={{ fontSize: 12, color: "#94a3b8" }}>No team data</p>;
-
-    const W = 560, H = 180, pad = { t: 20, r: 20, b: 50, l: 40 };
-    const innerW = W - pad.l - pad.r;
-    const innerH = H - pad.t - pad.b;
-    const barW = Math.max(innerW / teams.length * 0.7, 20);
-    const barSpacing = innerW / teams.length;
-
-    const maxScore = 10;
-    const yPos = (score) => pad.t + innerH - (score / maxScore) * innerH;
-    const xPos = (i) => pad.l + (i + 0.5) * barSpacing;
-
-    return (
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
-        {/* Y-axis grid and labels */}
-        {[0, 2.5, 5, 7.5, 10].map(v => (
-          <g key={v}>
-            <line x1={pad.l} y1={yPos(v)} x2={W - pad.r} y2={yPos(v)} stroke="#f1f5f9" strokeWidth="1" />
-            <text x={pad.l - 8} y={yPos(v) + 3} textAnchor="end" fontSize={9} fill="#94a3b8">{v}</text>
-          </g>
-        ))}
-
-        {/* Bars */}
-        {teams.map((t, i) => {
-          const color = getZoneColor(t.arousal);
-          const x = xPos(i) - barW / 2;
-          const y = yPos(t.overall);
-          const barHeight = (t.overall / maxScore) * innerH;
-
-          return (
-            <g key={t.name}>
-              <rect x={x} y={y} width={barW} height={barHeight} fill={color} rx="3" ry="3" />
-              <text x={xPos(i)} y={y - 5} textAnchor="middle" fontSize={10} fontWeight="600" fill="#0f172a">
-                {t.overall}
-              </text>
-              <text x={xPos(i)} y={H - 8} textAnchor="middle" fontSize={9} fill="#64748b">
-                {t.name}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Y-axis */}
-        <line x1={pad.l} y1={pad.t} x2={pad.l} y2={H - pad.b} stroke="#e2e8f0" strokeWidth="1" />
-        {/* X-axis */}
-        <line x1={pad.l} y1={H - pad.b} x2={W - pad.r} y2={H - pad.b} stroke="#e2e8f0" strokeWidth="1" />
-      </svg>
-    );
-  };
+  const exportedAt = `Exported ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}`;
 
   const sharedContainerStyle = {
     position: "fixed", top: 0, left: "-9999px", width: "1123px",
@@ -308,7 +305,7 @@ export default function ExportButton({ exportData, filename = "PULSE_Dashboard.p
             <p style={{ fontSize: 10, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: "0 0 10px", textTransform: "uppercase" }}>
               Team Overall Scores
             </p>
-            <TeamScoresSVG />
+            <TeamScoresSVG teams={teams} getZoneColor={getZoneColor} getZoneLabel={getZoneLabel} />
           </div>
         </div>
       </div>
@@ -340,7 +337,7 @@ export default function ExportButton({ exportData, filename = "PULSE_Dashboard.p
                 <p style={{ fontSize: 10, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: "0 0 10px", textTransform: "uppercase" }}>
                   Team Comparison
                 </p>
-                <TeamScoresDisplay />
+                <TeamScoresDisplay teams={teams} getZoneColor={getZoneColor} />
               </>
             ) : (
               <>
