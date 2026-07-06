@@ -220,6 +220,7 @@ export default function SpreadView() {
         arousal: parseFloat(arousal.toFixed(2)),
         team: teamName,
         color: teamColorMap[teamName] || "#64748b",
+        week: r.week_start,
         id: i,
       };
     });
@@ -410,6 +411,9 @@ export default function SpreadView() {
                               <span style={{ width: 8, height: 8, borderRadius: "50%", background: d.color, display: "inline-block" }} />
                               <span style={{ fontWeight: 600, color: "#0f172a" }}>{d.team}</span>
                             </div>
+                            <p style={{ color: "#94a3b8", fontSize: 11, margin: "0 0 3px" }}>
+                              Week {getWeekNumber(d.week, selectedCohort?.start_date)} · {formatDate(d.week)}
+                            </p>
                             <p style={{ color: "#64748b", margin: 0 }}>Score: <b style={{ color: "#0f172a" }}>{d.score}</b> · Arousal: <b style={{ color: "#0f172a" }}>{d.arousal}</b></p>
                           </div>
                         );
