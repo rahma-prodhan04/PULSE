@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer,
-  Tooltip, Legend, ReferenceLine, ReferenceArea, 
+  ReferenceLine, ReferenceArea,
 } from "recharts";
 import LoadingAnimation from "../LoadingAnimation";
 
@@ -87,13 +87,13 @@ export default function Timeline() {
     return { name, avg: avgScore, trend, color: TEAM_COLORS[i % TEAM_COLORS.length] };
   }).sort((a, b) => b.avg - a.avg);
 
-  dotPositionsRef.current = [];
+  useEffect(() => {
+    dotPositionsRef.current = [];
+  }, [chartData]);
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "#f8fafc", overflow: "hidden" }}>
-
-      {/* Sidebar */}
-      <aside style={{ width: 200, background: "#0a2818", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+    <div className="app-shell">
+      <aside className="app-sidebar">
         <div style={{ padding: "24px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
             <div style={{ width: 32, height: 32, background: "rgba(34,197,94,0.15)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>💚</div>
@@ -106,12 +106,14 @@ export default function Timeline() {
             { label: "Overview", icon: "⊞" },
             { label: "Teams", icon: "👤" },
             { label: "Timeline", icon: "🕐", active: true },
+            { label: "Spread", icon: "📊" },
           ].map(item => (
             <button key={item.label}
               onClick={() => {
                 if (item.label === "Overview") router.push("/");
                 if (item.label === "Timeline") router.push("/timeline");
                 if (item.label === "Teams") router.push("/teams");
+                if (item.label === "Spread") router.push("/spread")
               }}
               style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%",
@@ -136,11 +138,8 @@ export default function Timeline() {
         </div>
       </aside>
 
-      {/* Main */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-
-        {/* Topbar */}
-        <header style={{ padding: "20px 28px 16px", background: "#fff", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
+      <div className="app-main">
+        <header className="app-header">
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -163,15 +162,14 @@ export default function Timeline() {
           </div>
         </header>
 
-        {/* Body */}
-        <main style={{ flex: 1, overflowY: "auto", padding: "20px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+        <main className="app-content">
 
           {/* Main chart */}
           <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "20px 24px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <div>
                 <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0 }}>Team g-score trajectories</p>
-                <p style={{ fontSize: 12, color: "#64748b", margin: "3px 0 0" }}>How each team's overall health score has changed week over week</p>
+                <p style={{ fontSize: 12, color: "#64748b", margin: "3px 0 0" }}>How each team&apos;s overall health score has changed week over week</p>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 {teamStats.map((t, i) => (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useRouter } from "next/navigation";
 import {
@@ -75,13 +75,6 @@ function ResponseTick({ x, y, payload, dataMap }) {
 }
 
 
-const metricIcons = {
-  "Cohort avg score": "📈",
-  "Strongest signal": "👥",
-  "Weakest signal": "⚠️",
-  "Total responses": "👥",
-};
-
 function Sparkline({ data, color }) {
   const padded = data.length < 8
     ? Array.from({ length: 8 }, (_, i) => {
@@ -112,7 +105,6 @@ export default function Dashboard() {
   const [selectedTeam, setSelectedTeam] = useState("Cohort average");
   const [weekFilter, setWeekFilter] = useState("");
   const [curveWeek, setCurveWeek] = useState("all");
-  const exportRef = useRef(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -244,10 +236,8 @@ export default function Dashboard() {
   if (loading) return <LoadingAnimation onDone={() => setLoading(false)} />;
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "#f8fafc", overflow: "hidden" }}>
-
-      {/* ── Sidebar ── */}
-      <aside style={{ width: 200, background: "#0a2818", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+    <div className="app-shell">
+      <aside className="app-sidebar">
         {/* Logo */}
         <div style={{ padding: "24px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
@@ -263,12 +253,15 @@ export default function Dashboard() {
             { label: "Overview", icon: "⊞", active: true },
             { label: "Teams", icon: "👤", active: false },
             { label: "Timeline", icon: "🕐", active: false },
+            { label: "Spread", icon: "📊" },
           ].map(item => (
             <button key={item.label}
               onClick={() => {
                 if (item.label === "Overview") router.push("/");
                 if (item.label === "Timeline") router.push("/timeline");
                 if (item.label === "Teams") router.push("/teams");
+                if (item.label === "Spread") router.push("/spread");
+                
               }}
               style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%",
@@ -308,11 +301,8 @@ export default function Dashboard() {
         </div>
       </aside>
 
-      {/* ── Main ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-
-        {/* Topbar */}
-        <header style={{ padding: "20px 28px 16px", background: "#fff", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
+      <div className="app-main">
+        <header className="app-header">
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
             <div>
               <h1 style={{ fontSize: 24, fontWeight: 700, color: "#0f172a", margin: 0 }}>Overview</h1>
@@ -346,18 +336,15 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {/* Scrollable body */}
-        <main style={{ flex: 1, overflowY: "auto", padding: "20px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
-
-          {/* Metric cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+        <main className="app-content">
+          <div className="app-grid-4">
             {[
               { label: "COHORT AVG SCORE", value: cohortAvg.toFixed(1), suffix: " / 10", sub: "Across all dimensions", subColor: "#16a34a", spark: sparklines.score, sparkColor: "#16a34a", iconBg: "#dcfce7", icon: "📈" },
               { label: "STRONGEST SIGNAL", value: strongestDim?.label || "—", sub: `${strongestDim?.value ?? "—"} avg`, subColor: "#16a34a", spark: sparklines.social, sparkColor: "#16a34a", iconBg: "#dcfce7", icon: "👥" },
               { label: "WEAKEST SIGNAL", value: weakestDim?.label || "—", sub: `${weakestDim?.value ?? "—"} avg`, badge: "Needs attention", subColor: "#dc2626", spark: sparklines.recovery, sparkColor: "#dc2626", iconBg: "#fee2e2", icon: "⚠️" },
               { label: "TOTAL RESPONSES", value: responses.length.toString(), sub: `${teams.length} teams participated`, subColor: "#64748b", spark: sparklines.total, sparkColor: "#6366f1", iconBg: "#ede9fe", icon: "👥" },
             ].map(m => (
-              <div key={m.label} style={{ background: "#fff", borderRadius: 12, padding: "16px 18px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column" }}>
+              <div key={m.label} className="app-card app-card--padded" style={{ display: "flex", flexDirection: "column" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
                   <div>
                     <p style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", letterSpacing: "0.07em", margin: "0 0 6px" }}>{m.label}</p>

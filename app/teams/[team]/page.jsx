@@ -109,7 +109,6 @@ export default function TeamView() {
     if (teamName) fetchData();
   }, [teamName]);
 
-  const totalResponses = weeklyData.reduce((sum, w) => sum + w.responses, 0);
   const latest = weeklyData[weeklyData.length - 1];
   const overallAvg = weeklyData.length ? avg(weeklyData.map(w => w.overall)) : 0;
   const bestWeek = weeklyData.length ? [...weeklyData].sort((a, b) => Math.abs(a.overall - 5) - Math.abs(b.overall - 5))[0] : null;
@@ -157,10 +156,8 @@ export default function TeamView() {
   }
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "#f8fafc", overflow: "hidden" }}>
-
-      {/* Sidebar */}
-      <aside style={{ width: 200, background: "#0a2818", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+    <div className="app-shell">
+      <aside className="app-sidebar">
         <div style={{ padding: "24px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
             <div style={{ width: 32, height: 32, background: "rgba(34,197,94,0.15)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>💚</div>
@@ -173,12 +170,14 @@ export default function TeamView() {
             { label: "Overview", icon: "⊞" },
             { label: "Teams", icon: "👤", active: true },
             { label: "Timeline", icon: "🕐" },
+            { label: "Spread", icon: "📊" },
           ].map(item => (
             <button key={item.label}
               onClick={() => {
                 if (item.label === "Overview") router.push("/");
                 if (item.label === "Timeline") router.push("/timeline");
                 if (item.label === "Teams") router.push("/teams");
+                if (item.label === "Spread") router.push("/spread")
               }}
               style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%",
@@ -203,11 +202,8 @@ export default function TeamView() {
         </div>
       </aside>
 
-      {/* Main */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-
-        {/* Topbar */}
-        <header style={{ padding: "20px 28px 16px", background: "#fff", borderBottom: "1px solid #e2e8f0", flexShrink: 0 }}>
+      <div className="app-main">
+        <header className="app-header">
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -240,8 +236,7 @@ export default function TeamView() {
           </div>
         </header>
 
-        {/* Body */}
-        <main style={{ flex: 1, overflowY: "auto", padding: "20px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+        <main className="app-content">
 
           {/* Metric cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
