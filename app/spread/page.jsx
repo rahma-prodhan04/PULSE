@@ -274,8 +274,8 @@ export default function SpreadView() {
               ))}
             </div>
 
-            <ResponsiveContainer width="100%" height={360}>
-              <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
+            <ResponsiveContainer width="100%" height={Math.min(Math.max(300, dots.length * 1.8 + 200), 700)}>
+              <ScatterChart margin={{ top: 20, right: 30, bottom: 30, left: 20 }}>
                 <XAxis dataKey="x" type="number" domain={[0, 10]} tickCount={6} tick={{ fontSize: 11 }}
                   label={{ value: "Arousal level", position: "insideBottom", offset: -10, fontSize: 11, fill: "#94a3b8" }} />
                 <YAxis dataKey="y" type="number" domain={[-20, 115]} hide />
@@ -323,10 +323,10 @@ export default function SpreadView() {
                   }))}
                   shape={(props) => (
                     <circle
-                      cx={props.cx} cy={props.cy} r={5}
+                      cx={props.cx} cy={props.cy} r={7}
                       fill={props.color || "#64748b"}
-                      stroke="#fff" strokeWidth={1}
-                      opacity={0.6}
+                      stroke="#fff" strokeWidth={1.5}
+                      opacity={0.55}
                     />
                   )}
                 />
