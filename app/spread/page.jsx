@@ -117,52 +117,74 @@ export default function SpreadView() {
       density.height = H;
       const dCtx = density.getContext("2d");
 
-      // Compute centroid — average arousal across all responses
-      const avgArousal = rows.reduce((sum, r) => 
+      // Green base — whole chart starts green
+      dCtx.fillStyle = "#16a34a";
+      dCtx.globalAlpha = 0.18;
+      dCtx.fillRect(0, 0, W, H);
+      dCtx.globalAlpha = 1;
+
+      // Compute centroid
+      const avgArousal = rows.reduce((sum, r) =>
         sum + avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation]), 0
       ) / rows.length;
+      const centroidPx = arousalToPixel(avgArousal, W);
+      const centroidPy = yValueToPixel(ydY(avgArousal), H);
 
-      // Centroid anchor — invisible reference dot at the densest point,
-      // large strong blob that fills the whole chart and sets the red peak
-      const centroidY = ydY(avgArousal);
-      const cx = arousalToPixel(avgArousal, W);
-      const cy = yValueToPixel(centroidY, H);
-      const centroidR = W * 0.55; // covers the whole chart from center
+      // Max possible distance from centroid to any corner — for normalisation
+      const maxDist = Math.hypot(
+        Math.max(centroidPx, W - centroidPx),
+        Math.max(centroidPy, H - centroidPy)
+      );
 
-      const centroidGrad = dCtx.createRadialGradient(cx, cy, 0, cx, cy, centroidR);
-      centroidGrad.addColorStop(0, "rgba(255,255,255,0.55)");
-      centroidGrad.addColorStop(0.25, "rgba(255,255,255,0.3)");
-      centroidGrad.addColorStop(0.55, "rgba(255,255,255,0.1)");
-      centroidGrad.addColorStop(1, "rgba(0,0,0,0)");
-      dCtx.beginPath();
-      dCtx.arc(cx, cy, centroidR, 0, Math.PI * 2);
-      dCtx.fillStyle = centroidGrad;
-      dCtx.fill();
+      // Each dot emits a red blob — intensity scales with proximity to centroid
+      rows.forEach(r => {
+        const arousal = avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation]);
+        const px = arousalToPixel(arousal, W);
+        const py = yValueToPixel(ydY(arousal), H);
 
-      // Pass 2 — colorize density into green → yellow → red
+        const dist = Math.hypot(px - centroidPx, py - centroidPy);
+        const proximity = 1 - Math.min(dist / maxDist, 1); // 1 = at centroid, 0 = far
+        const intensity = 0.04 + proximity * 0.22;
+        const blobR = W * (0.06 + proximity * 0.06);
+
+        const grad = dCtx.createRadialGradient(px, py, 0, px, py, blobR);
+        grad.addColorStop(0, `rgba(255,255,255,${intensity.toFixed(3)})`);
+        grad.addColorStop(0.5, `rgba(255,255,255,${(intensity * 0.3).toFixed(3)})`);
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        dCtx.beginPath();
+        dCtx.arc(px, py, blobR, 0, Math.PI * 2);
+        dCtx.fillStyle = grad;
+        dCtx.fill();
+      });
+
+      // Pass 2 — colorize: green base, red builds near centroid
       const src = dCtx.getImageData(0, 0, W, H).data;
       const out = ctx.createImageData(W, H);
       const dst = out.data;
 
       for (let i = 0; i < src.length; i += 4) {
         const v = src[i] / 255;
-        if (v < 0.015) { dst[i + 3] = 0; continue; }
 
         let rr, g, b, a;
-        if (v < 0.45) {
-          const t = (v - 0.015) / 0.435;
-          rr = 22; g = Math.round(100 + 80 * t); b = 60;
-          a = Math.round(60 + 100 * t);
-        } else if (v < 0.72) {
-          const t = (v - 0.45) / 0.27;
-          rr = Math.round(22 + 233 * t); g = Math.round(180 - 30 * t); b = Math.round(60 - 60 * t);
-          a = Math.round(160 + 40 * t);
+        if (v < 0.08) {
+          // background green
+          rr = 22; g = 163; b = 74; a = 180;
+        } else if (v < 0.35) {
+          // green → yellow-green
+          const t = (v - 0.08) / 0.27;
+          rr = Math.round(22 + 180 * t); g = Math.round(163 + 17 * t); b = Math.round(74 - 74 * t);
+          a = Math.round(180 + 40 * t);
+        } else if (v < 0.65) {
+          // yellow → orange
+          const t = (v - 0.35) / 0.3;
+          rr = Math.round(202 + 53 * t); g = Math.round(180 - 80 * t); b = 0;
+          a = Math.round(210 + 30 * t);
         } else {
-          const t = (v - 0.72) / 0.28;
-          rr = 255; g = Math.round(150 * (1 - t)); b = 0;
-          a = Math.round(200 + 55 * t);
+          // deep red — only where many close-to-centroid dots cluster
+          const t = (v - 0.65) / 0.35;
+          rr = 255; g = Math.round(100 * (1 - t)); b = 0;
+          a = Math.min(255, Math.round(240 + 15 * t));
         }
-
         dst[i] = rr; dst[i + 1] = g; dst[i + 2] = b; dst[i + 3] = a;
       }
 
