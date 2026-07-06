@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { useCohort } from "../../lib/CohortContext";
@@ -51,6 +51,8 @@ export default function SpreadView() {
   const [teamNames, setTeamNames] = useState([]);
   const [weeks, setWeeks] = useState([]);
   const [selectedWeek, setSelectedWeek] = useState("all");
+  const heatCanvasRef = useRef(null);
+  const capturedPositions = useRef([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -72,6 +74,67 @@ export default function SpreadView() {
     }
     fetchData();
   }, [selectedCohortId]);
+
+  useEffect(() => {
+    const canvas = heatCanvasRef.current;
+    if (!canvas || !capturedPositions.current.length) return;
+
+    const W = canvas.offsetWidth;
+    const H = canvas.offsetHeight;
+    if (!W || !H) return;
+    canvas.width = W;
+    canvas.height = H;
+
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, W, H);
+
+    // Pass 1 — draw white radial blobs onto a black canvas to build a density map
+    const density = document.createElement("canvas");
+    density.width = W;
+    density.height = H;
+    const dCtx = density.getContext("2d");
+
+    capturedPositions.current.forEach(({ cx, cy }) => {
+      const r = 50;
+      const grad = dCtx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      grad.addColorStop(0, "rgba(255,255,255,1)");
+      grad.addColorStop(0.3, "rgba(255,255,255,0.7)");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      dCtx.beginPath();
+      dCtx.arc(cx, cy, r, 0, Math.PI * 2);
+      dCtx.fillStyle = grad;
+      dCtx.fill();
+    });
+
+    // Pass 2 — map density intensity to green → yellow → red color scale
+    const src = dCtx.getImageData(0, 0, W, H).data;
+    const out = ctx.createImageData(W, H);
+    const dst = out.data;
+
+    for (let i = 0; i < src.length; i += 4) {
+      const v = src[i] / 255;
+      if (v < 0.02) { dst[i + 3] = 0; continue; }
+
+      let r, g, b, a;
+      if (v < 0.35) {
+        const t = v / 0.35;
+        r = Math.round(50 * t); g = Math.round(160 + 60 * t); b = 50;
+        a = Math.round(160 * t);
+      } else if (v < 0.65) {
+        const t = (v - 0.35) / 0.3;
+        r = Math.round(50 + 205 * t); g = Math.round(220 - 70 * t); b = 0;
+        a = Math.round(180 + 30 * t);
+      } else {
+        const t = (v - 0.65) / 0.35;
+        r = 255; g = Math.round(150 * (1 - t)); b = 0;
+        a = Math.round(210 + 45 * t);
+      }
+
+      dst[i] = r; dst[i + 1] = g; dst[i + 2] = b; dst[i + 3] = a;
+    }
+
+    ctx.putImageData(out, 0, 0);
+  });
 
   // Build color map: team name → color
   const teamColorMap = Object.fromEntries(
@@ -129,7 +192,7 @@ export default function SpreadView() {
     : `Week ${getWeekNumber(selectedWeek, selectedCohort?.start_date)} · ${formatDate(selectedWeek)}`;
 
   if (loading) return <LoadingAnimation onDone={() => setLoading(false)} />;
-
+  capturedPositions.current = [];
   return (
     <div className="app-shell">
       <aside className="app-sidebar">
@@ -274,6 +337,7 @@ export default function SpreadView() {
               ))}
             </div>
 
+           <div style={{ position: "relative" }}>
             <ResponsiveContainer width="100%" height={Math.min(Math.max(300, dots.length * 1.8 + 200), 700)}>
               <ScatterChart margin={{ top: 20, right: 30, bottom: 30, left: 20 }}>
                 <XAxis dataKey="x" type="number" domain={[0, 10]} tickCount={6} tick={{ fontSize: 11 }}
@@ -315,23 +379,27 @@ export default function SpreadView() {
                 <Scatter data={curveData.filter(d => d.x >= 8)} line={{ stroke: "#dc2626", strokeWidth: 2 }} shape={() => <></>} />
 
                 {/* Individual dots plotted in a flat strip — jitter shows density */}
+                {/* Invisible scatter — captures pixel positions for canvas heatmap */}
                 <Scatter
-                  data={dots.map((d, i) => ({
-                    ...d,
-                    // Fixed y near zero with small deterministic jitter so dots don't all overlap exactly
-                    y: ydY(d.x) + ((i * 7.3) % 30) - 15,
-                  }))}
-                  shape={(props) => (
-                    <circle
-                      cx={props.cx} cy={props.cy} r={7}
-                      fill={props.color || "#64748b"}
-                      stroke="#fff" strokeWidth={1.5}
-                      opacity={0.55}
-                    />
-                  )}
+                  data={dots}
+                  shape={(props) => {
+                    if (props.cx != null && props.cy != null) {
+                      capturedPositions.current.push({ cx: props.cx, cy: props.cy });
+                    }
+                    return null;
+                  }}
                 />
               </ScatterChart>
             </ResponsiveContainer>
+            <canvas
+              ref={heatCanvasRef}
+              style={{
+                position: "absolute", top: 0, left: 0,
+                width: "100%", height: "100%",
+                pointerEvents: "none",
+              }}
+            />
+            </div>
 
             {/* Legend */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
