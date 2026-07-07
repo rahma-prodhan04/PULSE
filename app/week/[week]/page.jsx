@@ -10,8 +10,8 @@ import {
 import LoadingAnimation from "../../LoadingAnimation";
 import ExportButton from "../../ExportButton";
 
-function getWeekNumber(dateStr) {
-  const programStart = new Date("2026-06-01");
+function getWeekNumber(dateStr, programStartStr = "2026-06-01") {
+  const programStart = new Date(programStartStr);
   const current = new Date(dateStr);
   const diff = Math.round((current - programStart) / (7 * 24 * 60 * 60 * 1000));
   return diff + 3;
@@ -54,6 +54,7 @@ const dimIcons = { Social: "👥", Workload: "💼", Energy: "⚡", Recovery: "�
 export default function WeekView() {
   const { week } = useParams();
   const router = useRouter();
+  const { cohorts, selectedCohort, selectedCohortId, setSelectedCohortId } = useCohort();
   const [loading, setLoading] = useState(true);
   const [responses, setResponses] = useState([]);
   const [teams, setTeams] = useState([]);
@@ -62,16 +63,28 @@ export default function WeekView() {
 
   useEffect(() => {
     async function fetchData() {
-      const { data: allData } = await supabase.from("survey_responses").select("week_start");
+      if (!selectedCohortId) {
+        setWeeks([]);
+        setResponses([]);
+        setTeams([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data: allData } = await supabase
+        .from("survey_responses")
+        .select("week_start, teams!inner ( cohort_id )")
+        .eq("teams.cohort_id", selectedCohortId);
       const uniqueWeeks = [...new Set(allData?.map(r => r.week_start))].sort();
       setWeeks(uniqueWeeks);
 
       const { data, error } = await supabase
         .from("survey_responses")
-        .select(`q1_workload, q2_energy, q3_recovery, q4_motivation, q5_social, week_start, team_id, teams ( name )`)
+        .select(`q1_workload, q2_energy, q3_recovery, q4_motivation, q5_social, week_start, team_id, teams!inner ( name, cohort_id )`)
+        .eq("teams.cohort_id", selectedCohortId)
         .eq("week_start", week);
 
-      if (error) { console.error(error); return; }
+      if (error) { console.error(error); setLoading(false); return; }
 
       setResponses(data);
 
@@ -95,9 +108,10 @@ export default function WeekView() {
       }).sort((a, b) => b.overall - a.overall);
 
       setTeams(teamData);
+      setLoading(false);
     }
-    if (week) fetchData();
-  }, [week]);
+    if (week && selectedCohortId) fetchData();
+  }, [week, selectedCohortId]);
 
   const cohortAvg = teams.length ? avg(teams.map(t => t.overall)) : 0;
 
@@ -154,6 +168,24 @@ export default function WeekView() {
           </div>
           <p style={{ fontSize: 11, color: "rgba(134,239,172,0.6)", marginLeft: 42 }}>Culture Health Check</p>
         </div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <p style={{ fontSize: 10, fontWeight: 600, color: "rgba(134,239,172,0.5)", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 6px" }}>Cohort</p>
+          <select
+            value={selectedCohortId || ""}
+            onChange={(e) => setSelectedCohortId(e.target.value)}
+            style={{
+              width: "100%", fontSize: 12, padding: "6px 10px", borderRadius: 6,
+              border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)",
+              color: "#fff", cursor: "pointer",
+            }}
+          >
+            {cohorts.map(c => (
+              <option key={c.id} value={c.id}>
+                {c.name}{c.is_active ? " · active" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
         <nav style={{ padding: "12px 0", flex: 1 }}>
           {[
             { label: "Overview", icon: "⊞" },
@@ -182,10 +214,10 @@ export default function WeekView() {
         </nav>
         <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <p style={{ fontSize: 12, fontWeight: 500, color: "#fff", margin: "0 0 8px" }}>
-            Week {getWeekNumber(week)} of program
+            Week {getWeekNumber(week, selectedCohort?.start_date)} of program
           </p>
           <div style={{ height: 4, background: "rgba(255,255,255,0.1)", borderRadius: 2, overflow: "hidden", marginBottom: 6 }}>
-            <div style={{ height: "100%", width: `${Math.min((getWeekNumber(week) / 12) * 100, 100)}%`, background: "#22c55e", borderRadius: 2 }} />
+            <div style={{ height: "100%", width: `${Math.min((getWeekNumber(week, selectedCohort?.start_date) / 12) * 100, 100)}%`, background: "#22c55e", borderRadius: 2 }} />
           </div>
         </div>
         <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10 }}>
@@ -211,7 +243,7 @@ export default function WeekView() {
                   ← Overview
                 </button>
                 <span style={{ color: "#e2e8f0" }}>/</span>
-                <h1 style={{ fontSize: 24, fontWeight: 700, color: "#0f172a", margin: 0 }}>Week {getWeekNumber(week)}</h1>
+                <h1 style={{ fontSize: 24, fontWeight: 700, color: "#0f172a", margin: 0 }}>Week {getWeekNumber(week, selectedCohort?.start_date)}</h1>
               </div>
               <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
                 {responses.length} responses · {teams.length} teams
@@ -228,7 +260,7 @@ export default function WeekView() {
               >
                 <option value="all">📅 All weeks</option>
                 {weeks.map(w => (
-                  <option key={w} value={w}>Week {getWeekNumber(w)}</option>
+                  <option key={w} value={w}>Week {getWeekNumber(w, selectedCohort?.start_date)}</option>
                 ))}
               </select>
               <ExportButton
@@ -239,7 +271,7 @@ export default function WeekView() {
                   responses,
                   trendData: [{ week, label: week, v: cohortAvg, g: cohortAvg }],
                 }}
-                filename={`PULSE_Dashboard_Week_${getWeekNumber(week)}.pdf`}
+                filename={`PULSE_Dashboard_Week_${getWeekNumber(week, selectedCohort?.start_date)}.pdf`}
                 page2Chart="comparison"
               />
             </div>
@@ -282,7 +314,7 @@ export default function WeekView() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>
-                    Yerkes-Dodson Curve — Week {getWeekNumber(week)}
+                    Yerkes-Dodson Curve — Week {getWeekNumber(week, selectedCohort?.start_date)}
                   </p>
                   <span style={{ fontSize: 12, color: "#94a3b8" }}>ⓘ</span>
                 </div>

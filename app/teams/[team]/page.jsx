@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
+import { useCohort } from "../../../lib/CohortContext";
 import {
   ScatterChart, Scatter, XAxis, YAxis, LineChart, Line,
   ResponsiveContainer, Tooltip, ReferenceArea, ReferenceLine,
@@ -27,8 +28,8 @@ function avg(arr) {
   if (!arr.length) return 0;
   return parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2));
 }
-function getWeekNumber(dateStr) {
-  const programStart = new Date("2026-06-01");
+function getWeekNumber(dateStr, programStartStr = "2026-06-01") {
+  const programStart = new Date(programStartStr);
   const current = new Date(dateStr);
   const diff = Math.round((current - programStart) / (7 * 24 * 60 * 60 * 1000));
   return diff + 3;
@@ -45,6 +46,7 @@ export default function TeamView() {
   const { team } = useParams();
   const router = useRouter();
   const teamName = decodeURIComponent(team);
+  const { cohorts, selectedCohort, selectedCohortId, setSelectedCohortId } = useCohort();
 
   const [loading, setLoading] = useState(true);
   const [allTeamNames, setAllTeamNames] = useState([]);
@@ -55,9 +57,19 @@ export default function TeamView() {
 
   useEffect(() => {
     async function fetchData() {
+      if (!selectedCohortId) {
+        setAllTeamNames([]);
+        setTeamResponses([]);
+        setWeeklyData([]);
+        setCohortWeeklyAvg({});
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("survey_responses")
-        .select(`q1_workload, q2_energy, q3_recovery, q4_motivation, q5_social, week_start, teams ( name )`);
+        .select(`q1_workload, q2_energy, q3_recovery, q4_motivation, q5_social, week_start, teams!inner ( name, cohort_id )`)
+        .eq("teams.cohort_id", selectedCohortId);
 
       if (error) { console.error(error); setLoading(false); return; }
 
@@ -84,7 +96,7 @@ export default function TeamView() {
         const overall = avg([workload, energy, recovery, motivation, social]);
         const arousal = avg([workload, energy, recovery, motivation]);
         return {
-          week, label: `W${getWeekNumber(week)}`,
+          week, label: `W${getWeekNumber(week, selectedCohort?.start_date)}`,
           workload, energy, recovery, motivation, social,
           overall, arousal, g: overall, perf: ydY(arousal),
           responses: dims.workload.length,
@@ -106,8 +118,8 @@ export default function TeamView() {
 
       setLoading(false);
     }
-    if (teamName) fetchData();
-  }, [teamName]);
+    if (teamName && selectedCohortId) fetchData();
+  }, [teamName, selectedCohortId, selectedCohort?.start_date]);
 
   const latest = weeklyData[weeklyData.length - 1];
   const overallAvg = weeklyData.length ? avg(weeklyData.map(w => w.overall)) : 0;
@@ -164,6 +176,24 @@ export default function TeamView() {
             <span style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>Pulse</span>
           </div>
           <p style={{ fontSize: 11, color: "rgba(134,239,172,0.6)", marginLeft: 42 }}>Culture Health Check</p>
+        </div>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <p style={{ fontSize: 10, fontWeight: 600, color: "rgba(134,239,172,0.5)", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 6px" }}>Cohort</p>
+          <select
+            value={selectedCohortId || ""}
+            onChange={(e) => setSelectedCohortId(e.target.value)}
+            style={{
+              width: "100%", fontSize: 12, padding: "6px 10px", borderRadius: 6,
+              border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)",
+              color: "#fff", cursor: "pointer",
+            }}
+          >
+            {cohorts.map(c => (
+              <option key={c.id} value={c.id}>
+                {c.name}{c.is_active ? " · active" : ""}
+              </option>
+            ))}
+          </select>
         </div>
         <nav style={{ padding: "12px 0", flex: 1 }}>
           {[
