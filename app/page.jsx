@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { createClient } from "../lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useCohort } from "../lib/CohortContext";
 import {
@@ -100,6 +100,7 @@ function Sparkline({ data, color }) {
 }
 export default function Dashboard() {
   const router = useRouter();
+  const supabase = createClient();
   const { cohorts, selectedCohort, selectedCohortId, setSelectedCohortId } = useCohort();
   const [loading, setLoading] = useState(true);
   const [responses, setResponses] = useState([]);
@@ -248,88 +249,10 @@ export default function Dashboard() {
 
   return (
     <div className="app-shell">
-      <aside className="app-sidebar">
-        {/* Logo */}
-        <div style={{ padding: "24px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <img src="/pulse-logo.png" alt="Pulse" width={32} height={32} style={{ borderRadius: 8 }} />
-            <span style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>Pulse</span>
-          </div>
-          <p style={{ fontSize: 11, color: "rgba(134,239,172,0.6)", marginLeft: 42 }}>Culture Health Check</p>
-        </div>
-
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <p style={{ fontSize: 10, fontWeight: 600, color: "rgba(134,239,172,0.5)", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 6px" }}>Cohort</p>
-          <select
-            value={selectedCohortId || ""}
-            onChange={(e) => setSelectedCohortId(e.target.value)}
-            style={{
-              width: "100%", fontSize: 12, padding: "6px 10px", borderRadius: 6,
-              border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)",
-              color: "#fff", cursor: "pointer",
-            }}
-          >
-            {cohorts.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.name}{c.is_active ? " · active" : ""}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Nav */}
-        <nav style={{ padding: "12px 0", flex: 1 }}>
-          {[
-            { label: "Overview", icon: "⊞", active: true },
-            { label: "Teams", icon: "👤", active: false },
-            { label: "Timeline", icon: "🕐", active: false },
-            { label: "Spread", icon: "📊" },
-          ].map(item => (
-            <button key={item.label}
-              onClick={() => {
-                if (item.label === "Overview") router.push("/");
-                if (item.label === "Timeline") router.push("/timeline");
-                if (item.label === "Teams") router.push("/teams");
-                if (item.label === "Spread") router.push("/spread");
-                
-              }}
-              style={{
-                display: "flex", alignItems: "center", gap: 10, width: "100%",
-                padding: "10px 20px", border: "none", background: item.active ? "rgba(34,197,94,0.12)" : "transparent",
-                borderLeft: `3px solid ${item.active ? "#22c55e" : "transparent"}`,
-                color: item.active ? "#fff" : "rgba(134,239,172,0.7)",
-                fontSize: 13, cursor: "pointer", textAlign: "left",
-              }}>
-              <span style={{ fontSize: 15 }}>{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Progress */}
-        <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <span style={{ fontSize: 14 }}>📈</span>
-            <span style={{ fontSize: 12, fontWeight: 500, color: "#fff" }}>{trendData.length} weeks collected</span>
-          </div>
-          <div style={{ height: 4, background: "rgba(255,255,255,0.1)", borderRadius: 2, overflow: "hidden", marginBottom: 6 }}>
-            <div style={{ height: "100%", width: `${Math.min((trendData.length / 12) * 100, 100)}%`, background: "#22c55e", borderRadius: 2 }} />
-          </div>
-          <p style={{ fontSize: 11, color: "rgba(134,239,172,0.5)" }}>
-            {trendData.length > 0 ? `${trendData[0].week.slice(5)} – ${trendData[trendData.length - 1].week.slice(5)}` : "No data"}
-          </p>
-        </div>
-
-        {/* User */}
-        <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, background: "#22c55e", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#0a2818", flexShrink: 0 }}>N</div>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 13, fontWeight: 500, color: "#fff", margin: 0 }}>Osman</p>
-            <p style={{ fontSize: 11, color: "rgba(134,239,172,0.5)", margin: 0 }}>Admin</p>
-          </div>
-          <span style={{ color: "rgba(134,239,172,0.5)", fontSize: 12 }}>▾</span>
-        </div>
-      </aside>
+      <Sidebar
+        weeksCollected={trendData.length}
+        weekRangeLabel={trendData.length > 0 ? `${trendData[0].week.slice(5)} – ${trendData[trendData.length - 1].week.slice(5)}` : "No data"}
+      />
 
       <div className="app-main">
         <header className="app-header">
