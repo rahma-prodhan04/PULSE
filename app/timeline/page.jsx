@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useRef} from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase/client";
 import { useCohort } from "../../lib/CohortContext";
 import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer,
   ReferenceLine, ReferenceArea,
 } from "recharts";
 import LoadingAnimation from "../LoadingAnimation";
+import Sidebar from "../Sidebar";
 
 function avg(arr) {
   if (!arr.length) return 0;
@@ -106,8 +107,8 @@ if (loading) return <LoadingAnimation onDone={() => setLoading(false)} />;
   return (
     <div className="app-shell">
       <Sidebar
-        weeksCollected={trendData.length}
-        weekRangeLabel={trendData.length > 0 ? `${trendData[0].week.slice(5)} – ${trendData[trendData.length - 1].week.slice(5)}` : "No data"}
+        weeksCollected={chartData.length}
+        weekRangeLabel={chartData.length > 0 ? `${chartData[0].weekDate.slice(5)} – ${chartData[chartData.length - 1].weekDate.slice(5)}` : "No data"}
       />
 
       <div className="app-main">

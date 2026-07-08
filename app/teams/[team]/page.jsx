@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import LoadingAnimation from "../../LoadingAnimation";
 import ExportButton from "../../ExportButton";
+import Sidebar from "../../Sidebar";
 
 function ydY(x) {
   return 100 * Math.exp(-0.5 * Math.pow((x - 5) / 2.2, 2));

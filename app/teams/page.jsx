@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "../../lib/supabase/client";
 import { useCohort } from "../../lib/CohortContext";
 import LoadingAnimation from "../LoadingAnimation";
+import Sidebar from "../Sidebar";
 
 function avg(arr) {
   if (!arr.length) return 0;
@@ -54,6 +55,7 @@ export default function Teams() {
   const { cohorts, selectedCohortId, setSelectedCohortId } = useCohort();
   const [loading, setLoading] = useState(true);
   const [teams, setTeams] = useState([]);
+  const [weeksList, setWeeksList] = useState([]);
   const [sortBy, setSortBy] = useState("name");
   const [sortDir, setSortDir] = useState("desc");
   const [hoveredRow, setHoveredRow] = useState(null);
@@ -63,6 +65,7 @@ export default function Teams() {
     async function fetchData() {
       if (!selectedCohortId) {
         setTeams([]);
+        setWeeksList([]);
         setLoading(false);
         return;
       }
@@ -73,6 +76,11 @@ export default function Teams() {
         .eq("teams.cohort_id", selectedCohortId);
 
       if (error) { console.error(error); setLoading(false); return; }
+
+      // Track distinct weeks present in this cohort's data — used for the
+      // Sidebar's "N weeks collected" summary.
+      const weeks = [...new Set(data.map(r => r.week_start))].sort();
+      setWeeksList(weeks);
 
       const teamMap = {};
       data.forEach(r => {
@@ -125,8 +133,8 @@ export default function Teams() {
   return (
     <div className="app-shell">
       <Sidebar
-        weeksCollected={trendData.length}
-        weekRangeLabel={trendData.length > 0 ? `${trendData[0].week.slice(5)} – ${trendData[trendData.length - 1].week.slice(5)}` : "No data"}
+        weeksCollected={weeksList.length}
+        weekRangeLabel={weeksList.length > 0 ? `${weeksList[0].slice(5)} – ${weeksList[weeksList.length - 1].slice(5)}` : "No data"}
       />
 
       <div className="app-main">

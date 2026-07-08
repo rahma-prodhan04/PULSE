@@ -9,6 +9,7 @@ import {
   Tooltip, ReferenceArea, ReferenceLine,
 } from "recharts";
 import LoadingAnimation from "../LoadingAnimation";
+import Sidebar from "../Sidebar";
 
 function ydY(x) {
   return 100 * Math.exp(-0.5 * Math.pow((x - 5) / 2.2, 2));
@@ -248,8 +249,8 @@ export default function SpreadView() {
     <div style={{ display: "flex", height: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "#f8fafc", overflow: "hidden" }}>
 
       <Sidebar
-        weeksCollected={trendData.length}
-        weekRangeLabel={trendData.length > 0 ? `${trendData[0].week.slice(5)} – ${trendData[trendData.length - 1].week.slice(5)}` : "No data"}
+        weeksCollected={weeks.length}
+        weekRangeLabel={weeks.length > 0 ? `${weeks[0].slice(5)} – ${weeks[weeks.length - 1].slice(5)}` : "No data"}
       />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
