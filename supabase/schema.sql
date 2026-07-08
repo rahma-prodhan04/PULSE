@@ -275,3 +275,18 @@ CREATE POLICY "allow anon read team_health_index"
 -- FROM team_health_index thi
 -- JOIN teams t ON t.id = thi.team_id
 -- ORDER BY thi.week_start, t.name;
+
+create table profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  full_name text,
+  role text check (role in ('supervisor', 'manager')),
+  active boolean default true,
+  created_at timestamptz default now()
+);
+
+alter table profiles enable row level security;
+
+create policy "Authenticated users can read all profiles"
+  on profiles for select
+  to authenticated
+  using (true);

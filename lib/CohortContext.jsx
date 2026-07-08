@@ -1,11 +1,12 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "./supabase";
+import { createClient } from "./supabase/client";
 
 const CohortContext = createContext(null);
 
 export function CohortProvider({ children }) {
+  const supabase = createClient();
   const [cohorts, setCohorts] = useState([]);
   const [selectedCohortId, setSelectedCohortId] = useState(null);
   const [loading, setLoading] = useState(true);

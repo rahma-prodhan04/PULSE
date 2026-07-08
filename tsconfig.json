@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "app/page.jsx", "app/loading.jsx", "app/timeline/page.jsx"  ],
+, "app/page.jsx", "app/loading.jsx", "app/timeline/page.jsx", "app/login/page.jsx"  ],
   "exclude": ["node_modules"]
 }

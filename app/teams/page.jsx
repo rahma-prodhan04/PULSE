@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabase";
+import { createClient } from "../../lib/supabase/client";
 import { useCohort } from "../../lib/CohortContext";
 import LoadingAnimation from "../LoadingAnimation";
+import Sidebar from "../Sidebar";
 
 function avg(arr) {
   if (!arr.length) return 0;
@@ -54,14 +55,17 @@ export default function Teams() {
   const { cohorts, selectedCohortId, setSelectedCohortId } = useCohort();
   const [loading, setLoading] = useState(true);
   const [teams, setTeams] = useState([]);
+  const [weeksList, setWeeksList] = useState([]);
   const [sortBy, setSortBy] = useState("name");
   const [sortDir, setSortDir] = useState("desc");
   const [hoveredRow, setHoveredRow] = useState(null);
+  const supabase = createClient();
 
   useEffect(() => {
     async function fetchData() {
       if (!selectedCohortId) {
         setTeams([]);
+        setWeeksList([]);
         setLoading(false);
         return;
       }
@@ -72,6 +76,11 @@ export default function Teams() {
         .eq("teams.cohort_id", selectedCohortId);
 
       if (error) { console.error(error); setLoading(false); return; }
+
+      // Track distinct weeks present in this cohort's data — used for the
+      // Sidebar's "N weeks collected" summary.
+      const weeks = [...new Set(data.map(r => r.week_start))].sort();
+      setWeeksList(weeks);
 
       const teamMap = {};
       data.forEach(r => {
@@ -123,68 +132,10 @@ export default function Teams() {
 
   return (
     <div className="app-shell">
-      <aside className="app-sidebar">
-        <div style={{ padding: "24px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <img src="/pulse-logo.png" alt="Pulse" width={32} height={32} style={{ borderRadius: 8 }} />
-            <span style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>Pulse</span>
-          </div>
-          <p style={{ fontSize: 11, color: "rgba(134,239,172,0.6)", marginLeft: 42 }}>Culture Health Check</p>
-        </div>
-        <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <p style={{ fontSize: 10, fontWeight: 600, color: "rgba(134,239,172,0.5)", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 6px" }}>Cohort</p>
-          <select
-            value={selectedCohortId || ""}
-            onChange={(e) => setSelectedCohortId(e.target.value)}
-            style={{
-              width: "100%", fontSize: 12, padding: "6px 10px", borderRadius: 6,
-              border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)",
-              color: "#fff", cursor: "pointer",
-            }}
-          >
-            {cohorts.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.name}{c.is_active ? " · active" : ""}
-              </option>
-            ))}
-          </select>
-        </div>
-        <nav style={{ padding: "12px 0", flex: 1 }}>
-          {[
-            { label: "Overview", icon: "⊞" },
-            { label: "Teams", icon: "👤", active: true },
-            { label: "Timeline", icon: "🕐" },
-            {label: "Spread", icon: "📊" },
-          ].map(item => (
-            <button key={item.label}
-              onClick={() => {
-                if (item.label === "Overview") router.push("/");
-                if (item.label === "Timeline") router.push("/timeline");
-                if (item.label === "Teams") router.push("/teams");
-                if (item.label === "Spread") router.push("/spread")
-              }}
-              style={{
-                display: "flex", alignItems: "center", gap: 10, width: "100%",
-                padding: "10px 20px", border: "none",
-                background: item.active ? "rgba(34,197,94,0.12)" : "transparent",
-                borderLeft: `3px solid ${item.active ? "#22c55e" : "transparent"}`,
-                color: item.active ? "#fff" : "rgba(134,239,172,0.7)",
-                fontSize: 13, cursor: "pointer", textAlign: "left",
-              }}>
-              <span style={{ fontSize: 15 }}>{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </nav>
-        <div style={{ padding: "12px 20px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, background: "#22c55e", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#0a2818", flexShrink: 0 }}>N</div>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 13, fontWeight: 500, color: "#fff", margin: 0 }}>Osman</p>
-            <p style={{ fontSize: 11, color: "rgba(134,239,172,0.5)", margin: 0 }}>Admin</p>
-          </div>
-          <span style={{ color: "rgba(134,239,172,0.5)", fontSize: 12 }}>▾</span>
-        </div>
-      </aside>
+      <Sidebar
+        weeksCollected={weeksList.length}
+        weekRangeLabel={weeksList.length > 0 ? `${weeksList[0].slice(5)} – ${weeksList[weeksList.length - 1].slice(5)}` : "No data"}
+      />
 
       <div className="app-main">
         <header className="app-header">
