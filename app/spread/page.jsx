@@ -57,16 +57,7 @@ export default function SpreadView() {
   const chartWrapperRef = useRef(null);
   const supabase = createClient();
   const [selectedWeek, setSelectedWeek] = useState("all");
-  const [selectedTeams, setSelectedTeams] = useState(new Set()); // empty = show all teams
-
-  const toggleTeam = (name) => {
-    setSelectedTeams(prev => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      return next;
-    });
-  };
+  const [hoveredTeam, setHoveredTeam] = useState(null); // null = show all teams
 
   useEffect(() => {
     async function fetchData() {
@@ -128,9 +119,9 @@ export default function SpreadView() {
     const weekRows = selectedWeek === "all"
       ? responses
       : responses.filter(r => r.week_start === selectedWeek);
-    const rows = selectedTeams.size === 0
+    const rows = hoveredTeam === null
       ? weekRows
-      : weekRows.filter(r => selectedTeams.has(r.teams?.name));
+      : weekRows.filter(r => r.teams?.name === hoveredTeam);
 
     if (!rows.length) return;
 
@@ -194,7 +185,7 @@ export default function SpreadView() {
     }
 
     ctx.putImageData(out, 0, 0);
-  }, [responses, selectedWeek, selectedTeams]);
+  }, [responses, selectedWeek, hoveredTeam]);
 
  // Draw after render so Recharts SVG exists in DOM.
   // Retries on rAF until the container reports a valid, stable size,
@@ -240,9 +231,9 @@ export default function SpreadView() {
     const weekRows = selectedWeek === "all"
       ? responses
       : responses.filter(r => r.week_start === selectedWeek);
-    const rows = selectedTeams.size === 0
+    const rows = hoveredTeam === null
       ? weekRows
-      : weekRows.filter(r => selectedTeams.has(r.teams?.name));
+      : weekRows.filter(r => r.teams?.name === hoveredTeam);
     return rows.map((r, i) => {
       const arousal = avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation]);
       const score = avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation, r.q5_social]);
@@ -439,30 +430,25 @@ export default function SpreadView() {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
               {teamNames.map((name, i) => {
                 const color = TEAM_COLORS[i % TEAM_COLORS.length];
-                const isSelected = selectedTeams.has(name);
-                const noneSelected = selectedTeams.size === 0;
+                const isHovered = hoveredTeam === name;
+                const noneHovered = hoveredTeam === null;
                 return (
-                  <button key={name}
-                    onClick={() => toggleTeam(name)}
+                  <span key={name}
+                    onMouseEnter={() => setHoveredTeam(name)}
+                    onMouseLeave={() => setHoveredTeam(null)}
                     style={{
                       display: "flex", alignItems: "center", gap: 5, fontSize: 11, padding: "4px 10px",
                       borderRadius: 20, border: `1px solid ${color}`,
-                      background: isSelected ? color : "transparent",
-                      color: isSelected ? "#fff" : (noneSelected ? color : "#94a3b8"),
-                      opacity: noneSelected || isSelected ? 1 : 0.5,
-                      cursor: "pointer", transition: "all 0.15s",
+                      background: isHovered ? color : "transparent",
+                      color: isHovered ? "#fff" : color,
+                      opacity: noneHovered || isHovered ? 1 : 0.5,
+                      cursor: "default", transition: "all 0.15s",
                     }}>
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: isSelected ? "#fff" : color, display: "inline-block" }} />
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: isHovered ? "#fff" : color, display: "inline-block" }} />
                     {name}
-                  </button>
+                  </span>
                 );
               })}
-              {selectedTeams.size > 0 && (
-                <button onClick={() => setSelectedTeams(new Set())}
-                  style={{ fontSize: 11, padding: "4px 10px", borderRadius: 20, border: "1px solid #e2e8f0", background: "transparent", color: "#64748b", cursor: "pointer" }}>
-                  Clear filter
-                </button>
-              )}
             </div>
           </div>
 
