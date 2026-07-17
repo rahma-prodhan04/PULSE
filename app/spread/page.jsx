@@ -53,10 +53,21 @@ export default function SpreadView() {
   const [responses, setResponses] = useState([]);
   const [teamNames, setTeamNames] = useState([]);
   const [weeks, setWeeks] = useState([]);
-  const [selectedWeek, setSelectedWeek] = useState("all");
   const heatCanvasRef = useRef(null);
   const chartWrapperRef = useRef(null);
   const supabase = createClient();
+  const [selectedWeek, setSelectedWeek] = useState("all");
+
+  const [selectedTeams, setSelectedTeams] = useState(new Set()); // empty = show all teams
+
+  const toggleTeam = (name) => {
+    setSelectedTeams(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -89,7 +100,7 @@ export default function SpreadView() {
     const wrapperRect = wrapper.getBoundingClientRect();
     const W = Math.round(wrapperRect.width);
     const H = Math.round(wrapperRect.height);
-    if (!W || !H) return;
+    if (!W || !H || W < 0 || H < 0) return;
 
     canvas.width = W;
     canvas.height = H;
@@ -115,9 +126,12 @@ export default function SpreadView() {
       return { px, py };
     };
 
-    const rows = selectedWeek === "all"
+    const weekRows = selectedWeek === "all"
       ? responses
       : responses.filter(r => r.week_start === selectedWeek);
+    const rows = selectedTeams.size === 0
+      ? weekRows
+      : weekRows.filter(r => selectedTeams.has(r.teams?.name));
 
     if (!rows.length) return;
 
@@ -135,26 +149,13 @@ export default function SpreadView() {
     dCtx.fillRect(0, 0, W, H);
     dCtx.globalAlpha = 1;
 
-    // Compute centroid
-    const avgArousal = rows.reduce((sum, r) =>
-      sum + avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation]), 0
-    ) / rows.length;
-    const { px: centroidPx, py: centroidPy } = toPixel(avgArousal, ydY(avgArousal));
-
-    const maxDist = Math.hypot(
-      Math.max(centroidPx, W - centroidPx),
-      Math.max(centroidPy, H - centroidPy)
-    );
-
-    // Each dot emits a red blob — intensity scales with proximity to centroid
+   // Each dot emits an equal-intensity blob — real density comes from overlap, not distance from average
     rows.forEach(r => {
       const arousal = avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation]);
       const { px, py } = toPixel(arousal, ydY(arousal));
 
-      const dist = Math.hypot(px - centroidPx, py - centroidPy);
-      const proximity = 1 - Math.min(dist / maxDist, 1);
-      const intensity = 0.015 + proximity * 0.08;
-      const blobR = W * (0.04 + proximity * 0.03);
+      const intensity = 0.05;
+      const blobR = W * 0.032;
 
       const grad = dCtx.createRadialGradient(px, py, 0, px, py, blobR);
       grad.addColorStop(0,   `rgba(255,255,255,${intensity.toFixed(3)})`);
@@ -194,23 +195,55 @@ export default function SpreadView() {
     }
 
     ctx.putImageData(out, 0, 0);
-  }, [responses, selectedWeek]);
+  }, [responses, selectedWeek, selectedTeams]);
 
-  // Draw after render so Recharts SVG exists in DOM
+ // Draw after render so Recharts SVG exists in DOM.
+  // Retries on rAF until the container reports a valid, stable size,
+  // instead of relying on a single fixed-delay attempt.
   useEffect(() => {
-    // Small delay to ensure Recharts has fully rendered its SVG
-    const timer = setTimeout(drawHeatmap, 50);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 30; // ~0.5s at 60fps, plenty for layout to settle
+
+    function tryDraw() {
+      if (cancelled) return;
+      const wrapper = chartWrapperRef.current;
+      const rect = wrapper?.getBoundingClientRect();
+      const valid = rect && rect.width > 0 && rect.height > 0;
+
+      if (valid) {
+        drawHeatmap();
+        return;
+      }
+      if (attempts++ < MAX_ATTEMPTS) {
+        requestAnimationFrame(tryDraw);
+      }
+    }
+
+    // kick off after paint so the SVG/DOM has a chance to exist
+    requestAnimationFrame(tryDraw);
+
+    return () => { cancelled = true; };
   }, [drawHeatmap]);
 
+  useEffect(() => {
+  const wrapper = chartWrapperRef.current;
+  if (!wrapper) return;
+  const observer = new ResizeObserver(() => drawHeatmap());
+  observer.observe(wrapper);
+  return () => observer.disconnect();
+}, [drawHeatmap]);
   const teamColorMap = Object.fromEntries(
     teamNames.map((name, i) => [name, TEAM_COLORS[i % TEAM_COLORS.length]])
   );
 
   const dots = (() => {
-    const rows = selectedWeek === "all"
+    const weekRows = selectedWeek === "all"
       ? responses
       : responses.filter(r => r.week_start === selectedWeek);
+    const rows = selectedTeams.size === 0
+      ? weekRows
+      : weekRows.filter(r => selectedTeams.has(r.teams?.name));
     return rows.map((r, i) => {
       const arousal = avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation]);
       const score = avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation, r.q5_social]);
@@ -241,7 +274,7 @@ export default function SpreadView() {
     ? "All weeks"
     : `Week ${getWeekNumber(selectedWeek, selectedCohort?.start_date)} · ${formatDate(selectedWeek)}`;
 
-  const chartHeight = Math.min(Math.max(300, dots.length * 1.8 + 200), 700);
+  const chartHeight = Math.min(Math.max(300, responses.length * 1.8 + 200), 700);
 
   if (loading) return <LoadingAnimation onDone={() => setLoading(false)} />;
 
@@ -332,7 +365,7 @@ export default function SpreadView() {
               ))}
             </div>
 
-            <div ref={chartWrapperRef} style={{ position: "relative", height: chartHeight }}>
+            <div ref={chartWrapperRef} style={{ position: "relative", height: chartHeight, minWidth: 0, width: "100%" }}>
               <canvas
                 ref={heatCanvasRef}
                 style={{
@@ -404,13 +437,33 @@ export default function SpreadView() {
               </div>
             </div>
 
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
-              {teamNames.map((name, i) => (
-                <span key={name} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#64748b" }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: TEAM_COLORS[i % TEAM_COLORS.length], display: "inline-block" }} />
-                  {name}
-                </span>
-              ))}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+              {teamNames.map((name, i) => {
+                const color = TEAM_COLORS[i % TEAM_COLORS.length];
+                const isSelected = selectedTeams.has(name);
+                const noneSelected = selectedTeams.size === 0;
+                return (
+                  <button key={name}
+                    onClick={() => toggleTeam(name)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 5, fontSize: 11, padding: "4px 10px",
+                      borderRadius: 20, border: `1px solid ${color}`,
+                      background: isSelected ? color : "transparent",
+                      color: isSelected ? "#fff" : (noneSelected ? color : "#94a3b8"),
+                      opacity: noneSelected || isSelected ? 1 : 0.5,
+                      cursor: "pointer", transition: "all 0.15s",
+                    }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: isSelected ? "#fff" : color, display: "inline-block" }} />
+                    {name}
+                  </button>
+                );
+              })}
+              {selectedTeams.size > 0 && (
+                <button onClick={() => setSelectedTeams(new Set())}
+                  style={{ fontSize: 11, padding: "4px 10px", borderRadius: 20, border: "1px solid #e2e8f0", background: "transparent", color: "#64748b", cursor: "pointer" }}>
+                  Clear filter
+                </button>
+              )}
             </div>
           </div>
 
