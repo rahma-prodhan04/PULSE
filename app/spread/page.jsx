@@ -141,7 +141,7 @@ export default function SpreadView() {
       const { px, py } = toPixel(arousal, ydY(arousal));
 
       const intensity = 0.05;
-      const blobR = W * 0.05;
+      const blobR = W * 0.032;
 
       const grad = dCtx.createRadialGradient(px, py, 0, px, py, blobR);
       grad.addColorStop(0,   `rgba(255,255,255,${intensity.toFixed(3)})`);
