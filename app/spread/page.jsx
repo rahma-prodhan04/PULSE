@@ -89,7 +89,7 @@ export default function SpreadView() {
     const wrapperRect = wrapper.getBoundingClientRect();
     const W = Math.round(wrapperRect.width);
     const H = Math.round(wrapperRect.height);
-    if (!W || !H) return;
+    if (!W || !H || W < 0 || H < 0) return;
 
     canvas.width = W;
     canvas.height = H;
@@ -135,26 +135,13 @@ export default function SpreadView() {
     dCtx.fillRect(0, 0, W, H);
     dCtx.globalAlpha = 1;
 
-    // Compute centroid
-    const avgArousal = rows.reduce((sum, r) =>
-      sum + avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation]), 0
-    ) / rows.length;
-    const { px: centroidPx, py: centroidPy } = toPixel(avgArousal, ydY(avgArousal));
-
-    const maxDist = Math.hypot(
-      Math.max(centroidPx, W - centroidPx),
-      Math.max(centroidPy, H - centroidPy)
-    );
-
-    // Each dot emits a red blob — intensity scales with proximity to centroid
+   // Each dot emits an equal-intensity blob — real density comes from overlap, not distance from average
     rows.forEach(r => {
       const arousal = avg([r.q1_workload, r.q2_energy, r.q3_recovery, r.q4_motivation]);
       const { px, py } = toPixel(arousal, ydY(arousal));
 
-      const dist = Math.hypot(px - centroidPx, py - centroidPy);
-      const proximity = 1 - Math.min(dist / maxDist, 1);
-      const intensity = 0.015 + proximity * 0.08;
-      const blobR = W * (0.04 + proximity * 0.03);
+      const intensity = 0.05;
+      const blobR = W * 0.05;
 
       const grad = dCtx.createRadialGradient(px, py, 0, px, py, blobR);
       grad.addColorStop(0,   `rgba(255,255,255,${intensity.toFixed(3)})`);
@@ -196,13 +183,42 @@ export default function SpreadView() {
     ctx.putImageData(out, 0, 0);
   }, [responses, selectedWeek]);
 
-  // Draw after render so Recharts SVG exists in DOM
+ // Draw after render so Recharts SVG exists in DOM.
+  // Retries on rAF until the container reports a valid, stable size,
+  // instead of relying on a single fixed-delay attempt.
   useEffect(() => {
-    // Small delay to ensure Recharts has fully rendered its SVG
-    const timer = setTimeout(drawHeatmap, 50);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 30; // ~0.5s at 60fps, plenty for layout to settle
+
+    function tryDraw() {
+      if (cancelled) return;
+      const wrapper = chartWrapperRef.current;
+      const rect = wrapper?.getBoundingClientRect();
+      const valid = rect && rect.width > 0 && rect.height > 0;
+
+      if (valid) {
+        drawHeatmap();
+        return;
+      }
+      if (attempts++ < MAX_ATTEMPTS) {
+        requestAnimationFrame(tryDraw);
+      }
+    }
+
+    // kick off after paint so the SVG/DOM has a chance to exist
+    requestAnimationFrame(tryDraw);
+
+    return () => { cancelled = true; };
   }, [drawHeatmap]);
 
+  useEffect(() => {
+  const wrapper = chartWrapperRef.current;
+  if (!wrapper) return;
+  const observer = new ResizeObserver(() => drawHeatmap());
+  observer.observe(wrapper);
+  return () => observer.disconnect();
+}, [drawHeatmap]);
   const teamColorMap = Object.fromEntries(
     teamNames.map((name, i) => [name, TEAM_COLORS[i % TEAM_COLORS.length]])
   );
@@ -332,7 +348,7 @@ export default function SpreadView() {
               ))}
             </div>
 
-            <div ref={chartWrapperRef} style={{ position: "relative", height: chartHeight }}>
+            <div ref={chartWrapperRef} style={{ position: "relative", height: chartHeight, minWidth: 0, width: "100%" }}>
               <canvas
                 ref={heatCanvasRef}
                 style={{
