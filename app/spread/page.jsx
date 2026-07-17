@@ -257,7 +257,7 @@ export default function SpreadView() {
     ? "All weeks"
     : `Week ${getWeekNumber(selectedWeek, selectedCohort?.start_date)} · ${formatDate(selectedWeek)}`;
 
-  const chartHeight = Math.min(Math.max(300, dots.length * 1.8 + 200), 700);
+  const chartHeight = Math.min(Math.max(300, responses.length * 1.8 + 200), 700);
 
   if (loading) return <LoadingAnimation onDone={() => setLoading(false)} />;
 
