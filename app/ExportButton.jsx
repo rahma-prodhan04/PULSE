@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { IconDownload, IconLoader, IconUsers, IconBriefcase, IconZap, IconHeart, IconTarget } from "./icons";
 
 function ydY(x) {
   return 100 * Math.exp(-0.5 * Math.pow((x - 5) / 2.2, 2));
@@ -214,7 +215,9 @@ export default function ExportButton({ exportData, filename = "PULSE_Dashboard.p
           cursor: exporting ? "not-allowed" : "pointer", whiteSpace: "nowrap",
         }}
       >
-        {exporting ? <><span>⏳</span> Exporting…</> : <><span>⬇</span> Export</>}
+        {exporting
+          ? <><IconLoader size={14} style={{ animation: "spin 0.9s linear infinite" }} /> Exporting…</>
+          : <><IconDownload size={14} /> Export</>}
       </button>
 
       {/* ── PAGE 1: Header + metric cards + Yerkes-Dodson + Team Scores ── */}
@@ -321,7 +324,7 @@ export default function ExportButton({ exportData, filename = "PULSE_Dashboard.p
             </p>
             {cohortDimensions.map((d, i) => (
               <div key={d.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < cohortDimensions.length - 1 ? "1px solid #f1f5f9" : "none" }}>
-                <span style={{ fontSize: 14 }}>{{ Social:"👥", Workload:"💼", Energy:"⚡", Recovery:"❤️", Motivation:"🎯" }[d.label]}</span>
+                {(() => { const DimIcon = { Social: IconUsers, Workload: IconBriefcase, Energy: IconZap, Recovery: IconHeart, Motivation: IconTarget }[d.label]; return DimIcon ? <DimIcon size={14} strokeWidth={1.8} style={{ color: "#94a3b8", flexShrink: 0 }} /> : null; })()}
                 <span style={{ fontSize: 12, color: "#374151", width: 80 }}>{d.label}</span>
                 <div style={{ flex: 1, height: 6, background: "#f1f5f9", borderRadius: 3, overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${(d.value / 10) * 100}%`, background: getDimColor(d.value), borderRadius: 3 }} />

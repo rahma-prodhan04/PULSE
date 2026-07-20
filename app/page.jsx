@@ -11,6 +11,7 @@ import {
 import LoadingAnimation from "./LoadingAnimation";
 import ExportButton from "./ExportButton";
 import Sidebar from "./Sidebar";
+import { IconTrendingUp, IconCheckCircle, IconAlertTriangle, IconUsers, IconInfo } from "./icons";
 
 function ydY(x) {
   return 100 * Math.exp(-0.5 * Math.pow((x - 5) / 2.2, 2));
@@ -293,10 +294,10 @@ export default function Dashboard() {
         <main className="app-content">
           <div className="app-grid-4">
             {[
-              { label: "COHORT AVG SCORE", value: cohortAvg.toFixed(1), suffix: " / 10", sub: "Across all dimensions", subColor: "#16a34a", spark: sparklines.score, sparkColor: "#16a34a", iconBg: "#dcfce7", icon: "📈" },
-              { label: "STRONGEST SIGNAL", value: strongestDim?.label || "—", sub: `${strongestDim?.value ?? "—"} avg`, subColor: "#16a34a", spark: sparklines.social, sparkColor: "#16a34a", iconBg: "#dcfce7", icon: "👥" },
-              { label: "WEAKEST SIGNAL", value: weakestDim?.label || "—", sub: `${weakestDim?.value ?? "—"} avg`, badge: "Needs attention", subColor: "#dc2626", spark: sparklines.recovery, sparkColor: "#dc2626", iconBg: "#fee2e2", icon: "⚠️" },
-              { label: "TOTAL RESPONSES", value: responses.length.toString(), sub: `${teams.length} teams participated`, subColor: "#64748b", spark: sparklines.total, sparkColor: "#6366f1", iconBg: "#ede9fe", icon: "👥" },
+              { label: "COHORT AVG SCORE", value: cohortAvg.toFixed(1), suffix: " / 10", sub: "Across all dimensions", subColor: "#16a34a", spark: sparklines.score, sparkColor: "#16a34a", iconBg: "#dcfce7", iconColor: "#16a34a", icon: IconTrendingUp },
+              { label: "STRONGEST SIGNAL", value: strongestDim?.label || "—", sub: `${strongestDim?.value ?? "—"} avg`, subColor: "#16a34a", spark: sparklines.social, sparkColor: "#16a34a", iconBg: "#dcfce7", iconColor: "#16a34a", icon: IconCheckCircle },
+              { label: "WEAKEST SIGNAL", value: weakestDim?.label || "—", sub: `${weakestDim?.value ?? "—"} avg`, badge: "Needs attention", subColor: "#dc2626", spark: sparklines.recovery, sparkColor: "#dc2626", iconBg: "#fee2e2", iconColor: "#dc2626", icon: IconAlertTriangle },
+              { label: "TOTAL RESPONSES", value: responses.length.toString(), sub: `${teams.length} teams participated`, subColor: "#64748b", spark: sparklines.total, sparkColor: "#6366f1", iconBg: "#ede9fe", iconColor: "#6366f1", icon: IconUsers },
             ].map(m => (
               <div key={m.label} className="app-card app-card--padded" style={{ display: "flex", flexDirection: "column" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
@@ -310,8 +311,8 @@ export default function Dashboard() {
                       {m.badge && <span style={{ fontSize: 10, fontWeight: 500, padding: "2px 7px", borderRadius: 20, background: "#fee2e2", color: "#dc2626" }}>{m.badge}</span>}
                     </div>
                   </div>
-                  <div style={{ width: 40, height: 40, background: m.iconBg, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
-                    {m.icon}
+                  <div className="icon-badge" style={{ background: m.iconBg, color: m.iconColor }}>
+                    <m.icon size={19} strokeWidth={2} />
                   </div>
                 </div>
                 <div style={{ marginTop: "auto" }}>
@@ -325,13 +326,13 @@ export default function Dashboard() {
           <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 16 }}>
 
             {/* Curve */}
-            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+            <div className="card" style={{ padding: "18px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>
                     Yerkes-Dodson Curve — Cohort Position
                   </p>
-                  <span style={{ fontSize: 12, color: "#94a3b8" }}>ⓘ</span>
+                  <IconInfo size={13} style={{ color: "#94a3b8" }} title="Each dot is a team, positioned by arousal and overall score" />
                 </div>
                 <select
                   style={{ fontSize: 12, padding: "5px 10px", border: "1px solid #e2e8f0", borderRadius: 6, background: "#fff", color: "#374151" }}
@@ -469,7 +470,7 @@ export default function Dashboard() {
             </div>
 
             {/* Team scores */}
-            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+            <div className="card" style={{ padding: "18px 20px" }}>
               <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: "0 0 14px", textTransform: "uppercase" }}>Team Overall Scores</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                 {teams.map((t, i) => {
@@ -502,7 +503,7 @@ export default function Dashboard() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 16 }}>
 
             {/* Dimensions */}
-            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+            <div className="card" style={{ padding: "18px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                 <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>Dimensions</p>
                 <select
@@ -528,7 +529,7 @@ export default function Dashboard() {
             </div>
 
             {/* Trend */}
-            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+            <div className="card" style={{ padding: "18px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                 <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>Avg Score Trend — By Week</p>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -564,7 +565,7 @@ export default function Dashboard() {
             </div>
           </div>
           {/* Response breakdown */}
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+          <div className="card" style={{ padding: "18px 20px" }}>
             <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: "0 0 14px", textTransform: "uppercase" }}>
               Response Breakdown — By Week
             </p>

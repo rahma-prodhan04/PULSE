@@ -6,6 +6,7 @@ import { createClient } from "../../lib/supabase/client";
 import { useCohort } from "../../lib/CohortContext";
 import LoadingAnimation from "../LoadingAnimation";
 import Sidebar from "../Sidebar";
+import { IconDownload, IconUsers, IconBattery, IconBarChart, IconCheckCircle, IconChevronUp, IconChevronDown, IconChevronsUpDown } from "../icons";
 
 function avg(arr) {
   if (!arr.length) return 0;
@@ -147,7 +148,7 @@ export default function Teams() {
               </p>
             </div>
             <button style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, padding: "8px 16px", border: "none", borderRadius: 8, background: "#16a34a", color: "#fff", cursor: "pointer" }}>
-              ⬇ Export
+              <IconDownload size={14} /> Export
             </button>
           </div>
         </header>
@@ -165,7 +166,7 @@ export default function Teams() {
           </div>
 
           {/* Table */}
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+          <div className="card" style={{ overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
@@ -179,7 +180,12 @@ export default function Teams() {
                         letterSpacing: "0.06em", textTransform: "uppercase",
                         cursor: "pointer", userSelect: "none", whiteSpace: "nowrap",
                       }}>
-                      {col.label} {sortBy === col.key ? (sortDir === "desc" ? "↓" : "↑") : "↕"}
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                        {col.label}
+                        {sortBy === col.key
+                          ? (sortDir === "desc" ? <IconChevronDown size={11} strokeWidth={2.25} /> : <IconChevronUp size={11} strokeWidth={2.25} />)
+                          : <IconChevronsUpDown size={11} strokeWidth={2} style={{ color: "#cbd5e1" }} />}
+                      </span>
                     </th>
                   ))}
                   <th style={{ padding: "12px 16px", textAlign: "center", fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.06em", textTransform: "uppercase" }}>Zone</th>
@@ -225,14 +231,14 @@ export default function Teams() {
           {/* Summary row */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 16 }}>
             {[
-              { label: "Strongest social", value: teams.find(t => Math.abs(t.social - 5) === Math.min(...teams.map(x => Math.abs(x.social - 5))))?.name || "—", sub: "Closest to optimal social", color: "#16a34a", icon: "👥" },
-              { label: "Recovery concern", value: teams.find(t => t.recovery === Math.min(...teams.map(x => x.recovery)))?.name || "—", sub: "Lowest recovery score", color: "#d97706", icon: "🔋" },
-              { label: "Cohort avg g-score", value: avg(teams.map(t => t.overall)).toFixed(2), sub: "Across all teams", color: "#0f172a", icon: "📊" },
-              { label: "Teams in optimal zone", value: teams.filter(t => t.arousal >= 4 && t.arousal <= 6).length.toString(), sub: `of ${teams.length} teams`, color: "#16a34a", icon: "✅" },
+              { label: "Strongest social", value: teams.find(t => Math.abs(t.social - 5) === Math.min(...teams.map(x => Math.abs(x.social - 5))))?.name || "—", sub: "Closest to optimal social", color: "#16a34a", icon: IconUsers },
+              { label: "Recovery concern", value: teams.find(t => t.recovery === Math.min(...teams.map(x => x.recovery)))?.name || "—", sub: "Lowest recovery score", color: "#d97706", icon: IconBattery },
+              { label: "Cohort avg g-score", value: avg(teams.map(t => t.overall)).toFixed(2), sub: "Across all teams", color: "#0f172a", icon: IconBarChart },
+              { label: "Teams in optimal zone", value: teams.filter(t => t.arousal >= 4 && t.arousal <= 6).length.toString(), sub: `of ${teams.length} teams`, color: "#16a34a", icon: IconCheckCircle },
             ].map(m => (
-              <div key={m.label} style={{ background: "#fff", borderRadius: 10, border: "1px solid #e2e8f0", padding: "14px 16px" }}>
+              <div key={m.label} className="card" style={{ padding: "14px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 18 }}>{m.icon}</span>
+                  <m.icon size={15} strokeWidth={2} style={{ color: m.color, flexShrink: 0 }} />
                   <p style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", letterSpacing: "0.06em", textTransform: "uppercase", margin: 0 }}>{m.label}</p>
                 </div>
                 <p style={{ fontSize: 22, fontWeight: 700, color: m.color, margin: "0 0 3px", lineHeight: 1 }}>{m.value}</p>

@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "../lib/supabase/client";
 import { useCohort } from "../lib/CohortContext";
+import { IconGrid, IconUsers, IconClock, IconScatter, IconTrendingUp, IconLogOut } from "./icons";
 
 const NAV_ITEMS = [
-  { label: "Overview", icon: "⊞", path: "/" },
-  { label: "Teams", icon: "👤", path: "/teams" },
-  { label: "Timeline", icon: "🕐", path: "/timeline" },
-  { label: "Spread", icon: "📊", path: "/spread" },
+  { label: "Overview", icon: IconGrid, path: "/" },
+  { label: "Teams", icon: IconUsers, path: "/teams" },
+  { label: "Timeline", icon: IconClock, path: "/timeline" },
+  { label: "Spread", icon: IconScatter, path: "/spread" },
 ];
 
 export default function Sidebar({ weeksCollected = 0, weekRangeLabel = "No data" }) {
@@ -18,6 +19,7 @@ export default function Sidebar({ weeksCollected = 0, weekRangeLabel = "No data"
   const supabase = createClient();
   const { cohorts, selectedCohortId, setSelectedCohortId } = useCohort();
   const [user, setUser] = useState(null);
+  const [hoveredNav, setHoveredNav] = useState(null);
 
   useEffect(() => {
     async function getUser() {
@@ -42,12 +44,12 @@ export default function Sidebar({ weeksCollected = 0, weekRangeLabel = "No data"
   return (
     <aside className="app-sidebar">
       {/* Logo */}
-      <div style={{ padding: "24px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-          <img src="/pulse-logo.png" alt="Pulse" width={32} height={32} style={{ borderRadius: 8 }} />
-          <span style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>Pulse</span>
+      <div style={{ padding: "22px 20px 19px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 3 }}>
+          <img src="/pulse-logo.png" alt="Pulse" width={30} height={30} style={{ borderRadius: 8 }} />
+          <span style={{ fontSize: 17, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>Pulse</span>
         </div>
-        <p style={{ fontSize: 11, color: "rgba(134,239,172,0.6)", marginLeft: 42 }}>Culture Health Check</p>
+        <p style={{ fontSize: 11, color: "rgba(134,239,172,0.55)", marginLeft: 40, margin: "0 0 0 40px" }}>Culture Health Check</p>
       </div>
 
       {/* Cohort selector */}
@@ -71,21 +73,25 @@ export default function Sidebar({ weeksCollected = 0, weekRangeLabel = "No data"
       </div>
 
       {/* Nav */}
-      <nav style={{ padding: "12px 0", flex: 1 }}>
+      <nav style={{ padding: "10px 12px", flex: 1 }}>
         {NAV_ITEMS.map(item => {
           const active = isActive(item.path);
+          const hovered = hoveredNav === item.label;
+          const Icon = item.icon;
           return (
             <button key={item.label}
               onClick={() => router.push(item.path)}
+              onMouseEnter={() => setHoveredNav(item.label)}
+              onMouseLeave={() => setHoveredNav(null)}
               style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%",
-                padding: "10px 20px", border: "none",
-                background: active ? "rgba(34,197,94,0.12)" : "transparent",
-                borderLeft: `3px solid ${active ? "#22c55e" : "transparent"}`,
-                color: active ? "#fff" : "rgba(134,239,172,0.7)",
-                fontSize: 13, cursor: "pointer", textAlign: "left",
+                padding: "9px 12px", marginBottom: 2, border: "none", borderRadius: 8,
+                background: active ? "rgba(34,197,94,0.14)" : hovered ? "rgba(255,255,255,0.05)" : "transparent",
+                color: active ? "#fff" : hovered ? "rgba(255,255,255,0.9)" : "rgba(134,239,172,0.7)",
+                fontSize: 13, fontWeight: active ? 600 : 500, cursor: "pointer", textAlign: "left",
+                transition: "background 0.15s ease, color 0.15s ease",
               }}>
-              <span style={{ fontSize: 15 }}>{item.icon}</span>
+              <Icon size={16} strokeWidth={active ? 2 : 1.75} style={{ flexShrink: 0, opacity: active ? 1 : 0.85 }} />
               {item.label}
             </button>
           );
@@ -94,14 +100,14 @@ export default function Sidebar({ weeksCollected = 0, weekRangeLabel = "No data"
 
       {/* Progress */}
       <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <span style={{ fontSize: 14 }}>📈</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
+          <IconTrendingUp size={14} style={{ color: "#4ade80", flexShrink: 0 }} />
           <span style={{ fontSize: 12, fontWeight: 500, color: "#fff" }}>{weeksCollected} weeks collected</span>
         </div>
         <div style={{ height: 4, background: "rgba(255,255,255,0.1)", borderRadius: 2, overflow: "hidden", marginBottom: 6 }}>
           <div style={{ height: "100%", width: `${Math.min((weeksCollected / 12) * 100, 100)}%`, background: "#22c55e", borderRadius: 2 }} />
         </div>
-        <p style={{ fontSize: 11, color: "rgba(134,239,172,0.5)" }}>{weekRangeLabel}</p>
+        <p style={{ fontSize: 11, color: "rgba(134,239,172,0.5)", margin: 0 }}>{weekRangeLabel}</p>
       </div>
 
       {/* User */}
@@ -116,10 +122,11 @@ export default function Sidebar({ weeksCollected = 0, weekRangeLabel = "No data"
         </div>
         <button
           onClick={handleLogout}
-          style={{ background: "transparent", border: "none", color: "rgba(134,239,172,0.6)", fontSize: 11, cursor: "pointer", padding: "4px 6px" }}
+          aria-label="Log out"
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", color: "rgba(134,239,172,0.6)", cursor: "pointer", padding: 6, borderRadius: 6 }}
           title="Log out"
         >
-          ↪
+          <IconLogOut size={15} />
         </button>
       </div>
     </aside>

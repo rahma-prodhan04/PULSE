@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import LoadingAnimation from "../LoadingAnimation";
 import Sidebar from "../Sidebar";
+import { IconDownload, IconTrendingUp, IconTrendingDown } from "../icons";
 
 function avg(arr) {
   if (!arr.length) return 0;
@@ -130,7 +131,7 @@ if (loading) return <LoadingAnimation onDone={() => setLoading(false)} />;
             <button
               style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, padding: "8px 16px", border: "none", borderRadius: 8, background: "#16a34a", color: "#fff", cursor: "pointer" }}
             >
-              ⬇ Export
+              <IconDownload size={14} /> Export
             </button>
           </div>
         </header>
@@ -138,7 +139,7 @@ if (loading) return <LoadingAnimation onDone={() => setLoading(false)} />;
         <main className="app-content">
 
           {/* Main chart */}
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "20px 24px" }}>
+          <div className="card" style={{ padding: "20px 24px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <div>
                 <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0 }}>Team g-score trajectories</p>
@@ -283,8 +284,9 @@ if (loading) return <LoadingAnimation onDone={() => setLoading(false)} />;
                 <p style={{ fontSize: 24, fontWeight: 700, color: t.color, margin: "0 0 4px", lineHeight: 1 }}>{t.avg}</p>
                 <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>avg score</p>
                 <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6 }}>
-                  <span style={{ fontSize: 12, color: t.trend > 0 ? "#16a34a" : t.trend < 0 ? "#dc2626" : "#64748b", fontWeight: 500 }}>
-                    {t.trend > 0 ? "↑" : t.trend < 0 ? "↓" : "→"} {Math.abs(t.trend).toFixed(2)}
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 12, color: t.trend > 0 ? "#16a34a" : t.trend < 0 ? "#dc2626" : "#64748b", fontWeight: 500 }}>
+                    {t.trend > 0 ? <IconTrendingUp size={12} strokeWidth={2.25} /> : t.trend < 0 ? <IconTrendingDown size={12} strokeWidth={2.25} /> : null}
+                    {Math.abs(t.trend).toFixed(2)}
                   </span>
                   <span style={{ fontSize: 11, color: "#94a3b8" }}>since week 1</span>
                 </div>
