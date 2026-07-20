@@ -109,7 +109,6 @@ export default function Dashboard() {
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState("Cohort average");
   const [weekFilter, setWeekFilter] = useState("");
-  const [curveWeek, setCurveWeek] = useState("all");
 
   useEffect(() => {
     async function fetchData() {
@@ -164,11 +163,9 @@ export default function Dashboard() {
     { label: "Motivation", value: avg(teams.map(t => t.motivation)) },
   ].map(d => ({ ...d, color: getDimColor(d.value) })) : [];
   
-  // Team positions on the curve for the selected week (or all-time if "all")
+  // Team positions on the curve, averaged across all weeks
   const curveTeams = (() => {
-    const rows = curveWeek === "all"
-      ? responses
-      : responses.filter(r => r.week_start === curveWeek);
+    const rows = responses;
 
     const map = {};
     rows.forEach(r => {
@@ -334,16 +331,6 @@ export default function Dashboard() {
                   </p>
                   <IconInfo size={13} style={{ color: "#94a3b8" }} title="Each dot is a team, positioned by arousal and overall score" />
                 </div>
-                <select
-                  style={{ fontSize: 12, padding: "5px 10px", border: "1px solid #e2e8f0", borderRadius: 6, background: "#fff", color: "#374151" }}
-                  value={curveWeek}
-                  onChange={e => setCurveWeek(e.target.value)}
-                >
-                  <option value="all">All weeks (avg)</option>
-                  {trendData.map(t => (
-                    <option key={t.week} value={t.week}>{t.label}</option>
-                  ))}
-                </select>
               </div>
 
               {/* Zone labels */}
