@@ -11,6 +11,7 @@ import {
 import LoadingAnimation from "../../LoadingAnimation";
 import ExportButton from "../../ExportButton";
 import Sidebar from "../../Sidebar";
+import { IconInfo, IconInbox, IconTrendingUp, IconClock, IconTrophy, IconAlertTriangle, IconUsers, IconBriefcase, IconZap, IconHeart, IconTarget, IconBarChart } from "../../icons";
 
 function ydY(x) {
   return 100 * Math.exp(-0.5 * Math.pow((x - 5) / 2.2, 2));
@@ -41,7 +42,7 @@ const curveData = Array.from({ length: 101 }, (_, i) => ({
   y: parseFloat(ydY(i / 10).toFixed(1)),
 }));
 
-const dimIcons = { Social: "👥", Workload: "💼", Energy: "⚡", Recovery: "❤️", Motivation: "🎯" };
+const dimIcons = { Social: IconUsers, Workload: IconBriefcase, Energy: IconZap, Recovery: IconHeart, Motivation: IconTarget };
 
 export default function TeamView() {
   const { team } = useParams();
@@ -155,9 +156,9 @@ export default function TeamView() {
 
   if (!loading && weeklyData.length === 0) {
     return (
-      <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#f8fafc", fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#f8fafc" }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>📭</div>
+          <IconInbox size={40} strokeWidth={1.4} style={{ color: "#cbd5e1", marginBottom: 16 }} />
           <p style={{ fontSize: 16, fontWeight: 600, color: "#0f172a" }}>No data for {teamName}</p>
           <p style={{ fontSize: 13, color: "#64748b", marginTop: 6 }}>Try a different team.</p>
           <button onClick={() => router.push("/teams")}
@@ -215,12 +216,12 @@ export default function TeamView() {
           {/* Metric cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
             {[
-              { label: "OVERALL AVG SCORE", value: overallAvg.toFixed(1), suffix: " / 10", sub: "Across all weeks", subColor: "#16a34a", iconBg: "#dcfce7", icon: "📈" },
-              { label: "LATEST WEEK SCORE", value: latest ? latest.overall.toFixed(1) : "—", suffix: " / 10", sub: latest ? latest.label : "—", subColor: getZoneColor(latest?.arousal ?? 5), iconBg: "#dbeafe", icon: "🕐" },
-              { label: "BEST WEEK", value: bestWeek?.label || "—", sub: `${bestWeek?.overall ?? "—"} overall`, subColor: "#16a34a", iconBg: "#dcfce7", icon: "🏆" },
-              { label: "WEAKEST WEEK", value: worstWeek?.label || "—", sub: `${worstWeek?.overall ?? "—"} overall`, subColor: "#dc2626", iconBg: "#fee2e2", icon: "⚠️" },
+              { label: "OVERALL AVG SCORE", value: overallAvg.toFixed(1), suffix: " / 10", sub: "Across all weeks", subColor: "#16a34a", iconBg: "#dcfce7", iconColor: "#16a34a", icon: IconTrendingUp },
+              { label: "LATEST WEEK SCORE", value: latest ? latest.overall.toFixed(1) : "—", suffix: " / 10", sub: latest ? latest.label : "—", subColor: getZoneColor(latest?.arousal ?? 5), iconBg: "#dbeafe", iconColor: "#2563eb", icon: IconClock },
+              { label: "BEST WEEK", value: bestWeek?.label || "—", sub: `${bestWeek?.overall ?? "—"} overall`, subColor: "#16a34a", iconBg: "#dcfce7", iconColor: "#16a34a", icon: IconTrophy },
+              { label: "WEAKEST WEEK", value: worstWeek?.label || "—", sub: `${worstWeek?.overall ?? "—"} overall`, subColor: "#dc2626", iconBg: "#fee2e2", iconColor: "#dc2626", icon: IconAlertTriangle },
             ].map(m => (
-              <div key={m.label} style={{ background: "#fff", borderRadius: 12, padding: "16px 18px", border: "1px solid #e2e8f0" }}>
+              <div key={m.label} className="card" style={{ padding: "16px 18px" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
                   <div>
                     <p style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", letterSpacing: "0.07em", margin: "0 0 6px" }}>{m.label}</p>
@@ -229,8 +230,8 @@ export default function TeamView() {
                     </p>
                     <p style={{ fontSize: 12, color: m.subColor, margin: "5px 0 0" }}>{m.sub}</p>
                   </div>
-                  <div style={{ width: 40, height: 40, background: m.iconBg, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
-                    {m.icon}
+                  <div className="icon-badge" style={{ background: m.iconBg, color: m.iconColor }}>
+                    <m.icon size={19} strokeWidth={2} />
                   </div>
                 </div>
               </div>
@@ -241,13 +242,13 @@ export default function TeamView() {
           <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 16 }}>
 
             {/* Curve — individual responses for selected week */}
-            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+            <div className="card" style={{ padding: "18px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>
                     Yerkes-Dodson Curve — Individual Responses
                   </p>
-                  <span style={{ fontSize: 12, color: "#94a3b8" }}>ⓘ</span>
+                  <IconInfo size={13} style={{ color: "#94a3b8" }} title="Each dot is an individual response for the selected week" />
                 </div>
                 <select
                   style={{ fontSize: 12, padding: "5px 10px", border: "1px solid #e2e8f0", borderRadius: 6, background: "#fff", color: "#374151" }}
@@ -318,14 +319,14 @@ export default function TeamView() {
             </div>
 
             {/* Dimensions */}
-            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+            <div className="card" style={{ padding: "18px 20px" }}>
               <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: "0 0 14px", textTransform: "uppercase" }}>
                 Dimensions — All-time avg
               </p>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {cohortDimensions.map((d, i) => (
                   <div key={d.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: i < cohortDimensions.length - 1 ? "1px solid #f1f5f9" : "none" }}>
-                    <span style={{ fontSize: 16, flexShrink: 0 }}>{dimIcons[d.label] || "📊"}</span>
+                    {(() => { const DimIcon = dimIcons[d.label] || IconBarChart; return <DimIcon size={15} strokeWidth={1.8} style={{ color: "#94a3b8", flexShrink: 0 }} />; })()}
                     <span style={{ fontSize: 13, color: "#374151", width: 80, flexShrink: 0 }}>{d.label}</span>
                     <div style={{ flex: 1, height: 6, background: "#f1f5f9", borderRadius: 3, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${(d.value / 10) * 100}%`, background: d.color, borderRadius: 3 }} />
@@ -338,12 +339,12 @@ export default function TeamView() {
           </div>
 
           {/* Curve — full trajectory across all weeks */}
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+          <div className="card" style={{ padding: "18px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
               <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>
                 Yerkes-Dodson Curve — {teamName} Trajectory
               </p>
-              <span style={{ fontSize: 12, color: "#94a3b8" }}>ⓘ</span>
+              <IconInfo size={13} style={{ color: "#94a3b8" }} title="Each dot is a week; the most recent is highlighted" />
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, padding: "0 20px" }}>
               {[["Risk", "#dc2626", "1 – 2.9"], ["Caution", "#d97706", "2 – 3.9"], ["Optimal", "#16a34a", "4 – 6"], ["Caution", "#d97706", "6 – 8"], ["Risk", "#dc2626", "8 – 10"]].map(([label, color, range]) => (
@@ -407,7 +408,7 @@ export default function TeamView() {
           </div>
 
           {/* Trend — this team vs cohort */}
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+          <div className="card" style={{ padding: "18px 20px" }}>
             <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: "0 0 14px", textTransform: "uppercase" }}>
               Score Trend — {teamName} vs Cohort Avg
             </p>

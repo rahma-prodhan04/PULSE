@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import LoadingAnimation from "../LoadingAnimation";
 import Sidebar from "../Sidebar";
+import { IconInfo } from "../icons";
 
 function ydY(x) {
   return 100 * Math.exp(-0.5 * Math.pow((x - 5) / 2.2, 2));
@@ -279,7 +280,7 @@ export default function SpreadView() {
   if (loading) return <LoadingAnimation onDone={() => setLoading(false)} />;
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "#f8fafc", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", background: "#f8fafc", overflow: "hidden" }}>
 
       <Sidebar
         weeksCollected={weeks.length}
@@ -327,7 +328,7 @@ export default function SpreadView() {
               const count = zoneCounts[zone] || 0;
               const pct = Math.round((count / total) * 100);
               return (
-                <div key={zone} style={{ background: "#fff", borderRadius: 12, padding: "16px 18px", border: "1px solid #e2e8f0" }}>
+                <div key={zone} className="card" style={{ padding: "16px 18px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                     <span style={{ width: 10, height: 10, borderRadius: "50%", background: color, flexShrink: 0 }} />
                     <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.06em", textTransform: "uppercase", margin: 0 }}>{zone}</p>
@@ -343,13 +344,13 @@ export default function SpreadView() {
             })}
           </div>
 
-          <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+          <div className="card" style={{ padding: "18px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>
                   Yerkes-Dodson Curve — Individual Spread
                 </p>
-                <span style={{ fontSize: 12, color: "#94a3b8" }}>ⓘ</span>
+                <IconInfo size={13} style={{ color: "#94a3b8" }} title="Each dot is an individual response, positioned by arousal and overall score" />
               </div>
               <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>
                 Heatmap shows density · dots show team · overlap = hot zone
