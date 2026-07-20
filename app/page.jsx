@@ -323,7 +323,7 @@ export default function Dashboard() {
           <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 16 }}>
 
             {/* Curve */}
-            <div className="card" style={{ padding: "18px 20px" }}>
+            <div className="card" style={{ padding: "18px 20px", display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>
@@ -343,7 +343,8 @@ export default function Dashboard() {
                 ))}
               </div>
 
-              <ResponsiveContainer width="100%" height={240}>
+              <div style={{ flex: 1, minHeight: 240 }}>
+              <ResponsiveContainer width="100%" height="100%">
               <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
                 <defs>
                   <linearGradient id="riskFillL" x1="0" y1="0" x2="0" y2="1">
@@ -446,6 +447,7 @@ export default function Dashboard() {
                 />
               </ScatterChart>
             </ResponsiveContainer>
+              </div>
 
               <div style={{ display: "flex", gap: 20, marginTop: 4 }}>
                 {[["#16a34a", "Optimal (4 – 6)"], ["#d97706", "Caution (2 – 4, 6 – 8)"], ["#dc2626", "Risk (1 – 2, 9 – 10)"]].map(([c, l]) => (

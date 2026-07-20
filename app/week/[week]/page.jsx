@@ -249,7 +249,7 @@ export default function WeekView() {
           <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 16 }}>
 
             {/* Curve */}
-            <div className="card" style={{ padding: "18px 20px" }}>
+            <div className="card" style={{ padding: "18px 20px", display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>
@@ -266,7 +266,8 @@ export default function WeekView() {
                   </div>
                 ))}
               </div>
-              <ResponsiveContainer width="100%" height={240}>
+              <div style={{ flex: 1, minHeight: 240 }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
                   <XAxis dataKey="x" type="number" domain={[0, 10]} tickCount={6} tick={{ fontSize: 11 }}
                     label={{ value: "Arousal level", position: "insideBottom", offset: -10, fontSize: 11, fill: "#94a3b8" }} />
@@ -310,6 +311,7 @@ export default function WeekView() {
                   />
                 </ScatterChart>
               </ResponsiveContainer>
+              </div>
               <div style={{ display: "flex", gap: 20, marginTop: 4 }}>
                 {[["#16a34a", "Optimal (4 – 6)"], ["#d97706", "Caution (2 – 4, 6 – 8)"], ["#dc2626", "Risk (1 – 2, 9 – 10)"]].map(([c, l]) => (
                   <span key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#64748b" }}>
