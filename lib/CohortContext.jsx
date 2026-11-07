@@ -15,7 +15,7 @@ export function CohortProvider({ children }) {
     async function fetchCohorts() {
       const { data, error } = await supabase
         .from("cohorts")
-        .select("id, name, start_date, end_date, is_active")
+        .select("id, name, start_date, end_date, is_active, first_week_number, total_interns")
         .order("start_date", { ascending: false });
 
       if (error) { console.error(error); setLoading(false); return; }

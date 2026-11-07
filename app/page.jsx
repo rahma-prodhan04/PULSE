@@ -11,6 +11,7 @@ import {
 import LoadingAnimation from "./LoadingAnimation";
 import ExportButton from "./ExportButton";
 import Sidebar from "./Sidebar";
+import {getWeekNumber} from "../lib/cohortUtils";
 
 function ydY(x) {
   return 100 * Math.exp(-0.5 * Math.pow((x - 5) / 2.2, 2));
@@ -39,20 +40,13 @@ function avg(arr) {
   return parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2));
 }
 
-function getWeekNumber(dateStr, programStartStr = "2026-06-01") {
-  const programStart = new Date(programStartStr);
-  const current = new Date(dateStr);
-  const diff = Math.round((current - programStart) / (7 * 24 * 60 * 60 * 1000));
-  return diff + 3;
-}
-
 function formatDate(dateStr) {
   const d = new Date(dateStr + "T00:00:00"); // avoids timezone rollback to the previous day
   return d.toLocaleDateString("en-AU", { month: "short", day: "numeric" }); // e.g. "1 Jun"
 }
 
-function getWeekLabel(dateStr, programStartStr = "2026-06-01") {
-  return `W${getWeekNumber(dateStr, programStartStr)} - ${formatDate(dateStr)}`;
+function getWeekLabel(dateStr, cohort) {
+  return `W${getWeekNumber(dateStr, cohort)} - ${formatDate(dateStr)}`;
 }
 
 const curveData = Array.from({ length: 101 }, (_, i) => ({
@@ -60,14 +54,14 @@ const curveData = Array.from({ length: 101 }, (_, i) => ({
   y: parseFloat(ydY(i / 10).toFixed(1)),
 }));
 
-const TOTAL_INTERNS = 69;
+// const TOTAL_INTERNS = 69;
 
 function ResponseTick({ x, y, payload, dataMap }) {
   const d = dataMap?.[payload.value];
   return (
     <g transform={`translate(${x},${y})`}>
       <text x={0} y={12} textAnchor="middle" fontSize={10} fill="#64748b">{payload.value}</text>
-      {d && (
+      {d && d.engagementPct != null && (
         <text x={0} y={26} textAnchor="middle" fontSize={10} fontWeight={700} fill="#16a34a">
           {d.engagementPct}% engagement
         </text>
@@ -78,15 +72,16 @@ function ResponseTick({ x, y, payload, dataMap }) {
 
 
 function Sparkline({ data, color }) {
-  const padded = data.length < 8
-    ? Array.from({ length: 8 }, (_, i) => {
-        const base = data[Math.floor(i / 8 * data.length)]?.v ?? 5;
-        return { v: base + Math.sin(i * 1.2) * 0.3 };
-      })
-    : data;
+  if (data.length < 2) {
+    return (
+      <div style={{ height: 52, display: "flex", alignItems: "flex-end" }}>
+        <div style={{ width: "100%", borderTop: "2px dashed #e2e8f0" }} />
+      </div>
+    );
+  }
   return (
     <ResponsiveContainer width="100%" height={52}>
-      <AreaChart data={padded} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+      <AreaChart data={data} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id={`spark-${color.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor={color} stopOpacity={0.25} />
@@ -99,6 +94,7 @@ function Sparkline({ data, color }) {
     </ResponsiveContainer>
   );
 }
+
 export default function Dashboard() {
   const router = useRouter();
   const supabase = createClient();
@@ -205,6 +201,7 @@ export default function Dashboard() {
   const weeks = trendData.map(t => t.week);
 
   // Response counts per week, broken down by team
+  const totalInterns = selectedCohort?.total_interns ?? null;
   const responseBreakdown = Object.entries(
     responses.reduce((acc, r) => {
       const wk = r.week_start;
@@ -221,16 +218,29 @@ export default function Dashboard() {
       total: Object.values(teamCounts).reduce((sum, n) => sum + n, 0),
       teamCounts,
     }))
-    .map(d => ({ ...d, engagementPct: Math.round((d.total / TOTAL_INTERNS) * 100) })); 
+    .map(d => ({ ...d, engagementPct: totalInterns ? Math.round((d.total / totalInterns) * 100) : null })); 
 
   const breakdownByLabel = Object.fromEntries(responseBreakdown.map(d => [d.label, d]));
 
   // Sparkline data per metric
+  const DIM_KEYS = {
+    Social: "q5_social", Workload: "q1_workload", Energy: "q2_energy",
+    Recovery: "q3_recovery", Motivation: "q4_motivation",
+  };
+
+  const weeklyDimSeries = (label) => {
+    const key = DIM_KEYS[label];
+    if (!key) return [];
+    return weeks.map(wk => ({
+      v: avg(responses.filter(r => r.week_start === wk).map(r => r[key]).filter(v => v != null)),
+    }));
+  };
+
   const sparklines = {
     score:    trendData.map(t => ({ v: t.g })),
-    social:   trendData.map((t, i) => ({ v: [6.25, 5.23][i] ?? t.g })),
-    recovery: trendData.map((t, i) => ({ v: [4.96, 5.17][i] ?? t.g })),
-    total:    trendData.map((t, i) => ({ v: [56, 51][i] ?? 50 })),
+    social:   weeklyDimSeries(strongestDim?.label),   // strongest-signal card
+    recovery: weeklyDimSeries(weakestDim?.label),     // weakest-signal card
+    total:    responseBreakdown.map(d => ({ v: d.total })),
   };
 
   const selectedTeamData = teams.find(t => t.name === selectedTeam);
@@ -274,7 +284,7 @@ export default function Dashboard() {
                 }}
               >
                 <option value="">All weeks</option>
-                {weeks.map((w, i) => <option key={w} value={w}>Week {i + 3}</option>)}
+                {weeks.map(w => <option key={w} value={w}>Week {getWeekNumber(w, selectedCohort)}</option>)}
               </select>
               <ExportButton
                 exportData={{

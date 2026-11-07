@@ -55,7 +55,9 @@ export default function Sidebar({ weeksCollected = 0, weekRangeLabel = "No data"
         <p style={{ fontSize: 10, fontWeight: 600, color: "rgba(134,239,172,0.5)", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 6px" }}>Cohort</p>
         <select
           value={selectedCohortId || ""}
-          onChange={(e) => setSelectedCohortId(e.target.value)}
+          onChange={(e) => {setSelectedCohortId(e.target.value);
+            if (pathname.startsWith("/teams")) {router.push("/teams");}
+          }}
           style={{
             width: "100%", fontSize: 12, padding: "6px 10px", borderRadius: 6,
             border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)",
@@ -63,7 +65,7 @@ export default function Sidebar({ weeksCollected = 0, weekRangeLabel = "No data"
           }}
         >
           {cohorts.map(c => (
-            <option key={c.id} value={c.id}>
+            <option key={c.id} value={c.id} style={{ color: "#0f172a", background: "#fff"}}>
               {c.name}{c.is_active ? " · active" : ""}
             </option>
           ))}

@@ -90,9 +90,7 @@ export default function Teams() {
         teamMap[name].energy.push(r.q2_energy);
         teamMap[name].recovery.push(r.q3_recovery);
         teamMap[name].motivation.push(r.q4_motivation);
-        if (r.week_start >= "2026-06-08") {
-            teamMap[name].social.push(r.q5_social);
-        }
+        teamMap[name].social.push(r.q5_social);
       });
 
       const teamData = Object.entries(teamMap).map(([name, dims]) => {

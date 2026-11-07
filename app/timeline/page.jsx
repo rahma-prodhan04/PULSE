@@ -10,17 +10,11 @@ import {
 } from "recharts";
 import LoadingAnimation from "../LoadingAnimation";
 import Sidebar from "../Sidebar";
+import { getWeekNumber } from "../../lib/cohortUtils";
 
 function avg(arr) {
   if (!arr.length) return 0;
   return parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2));
-}
-
-function getWeekNumber(dateStr, programStartStr = "2026-06-01") {
-  const programStart = new Date(programStartStr);
-  const current = new Date(dateStr);
-  const diff = Math.round((current - programStart) / (7 * 24 * 60 * 60 * 1000));
-  return diff + 3;
 }
 
 const TEAM_COLORS = [
@@ -75,7 +69,7 @@ export default function Timeline() {
       const rows = Object.entries(weekTeamMap)
         .sort(([a], [b]) => new Date(a) - new Date(b))
         .map(([week, teams]) => {
-          const row = { week: `Week ${getWeekNumber(week, selectedCohort?.start_date)}`, weekDate: week };
+          const row = { week: `Week ${getWeekNumber(week, selectedCohort)}`, weekDate: week };
           allTeams.forEach(team => {
             const scores = teams[team] || [];
             row[team] = scores.length ? avg(scores) : null;
@@ -88,7 +82,7 @@ export default function Timeline() {
       setLoading(false);
     }
     fetchData();
-  }, [selectedCohortId, selectedCohort?.start_date]);
+  }, [selectedCohortId, selectedCohort]);
 
   useEffect(() => {
     dotPositionsRef.current = [];
