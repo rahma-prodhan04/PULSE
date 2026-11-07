@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import LoadingAnimation from "../LoadingAnimation";
 import Sidebar from "../Sidebar";
+import { getWeekNumber } from "../../lib/cohortUtils";
 import { IconInfo } from "../icons";
 
 function ydY(x) {
@@ -24,12 +25,7 @@ function avg(arr) {
   if (!arr.length) return 0;
   return parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2));
 }
-function getWeekNumber(dateStr, programStartStr = "2026-06-01") {
-  const programStart = new Date(programStartStr);
-  const current = new Date(dateStr);
-  const diff = Math.round((current - programStart) / (7 * 24 * 60 * 60 * 1000));
-  return diff + 3;
-}
+
 function formatDate(dateStr) {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString("en-AU", { month: "short", day: "numeric" });
@@ -273,7 +269,7 @@ export default function SpreadView() {
 
   const weekLabel = selectedWeek === "all"
     ? "All weeks"
-    : `Week ${getWeekNumber(selectedWeek, selectedCohort?.start_date)} · ${formatDate(selectedWeek)}`;
+    : `Week ${getWeekNumber(selectedWeek, selectedCohort)} · ${formatDate(selectedWeek)}`;
 
   const chartHeight = Math.min(Math.max(300, responses.length * 1.8 + 200), 700);
 
@@ -311,7 +307,7 @@ export default function SpreadView() {
             >
               <option value="all">All weeks</option>
               {weeks.map(w => (
-                <option key={w} value={w}>Week {getWeekNumber(w, selectedCohort?.start_date)} · {formatDate(w)}</option>
+                <option key={w} value={w}>Week {getWeekNumber(w, selectedCohort)} · {formatDate(w)}</option>
               ))}
             </select>
           </div>
@@ -393,7 +389,7 @@ export default function SpreadView() {
                               <span style={{ fontWeight: 600, color: "#0f172a" }}>{d.team}</span>
                             </div>
                             <p style={{ color: "#94a3b8", fontSize: 11, margin: "0 0 3px" }}>
-                              Week {getWeekNumber(d.week, selectedCohort?.start_date)} · {formatDate(d.week)}
+                              Week {getWeekNumber(d.week, selectedCohort)} · {formatDate(d.week)}
                             </p>
                             <p style={{ color: "#64748b", margin: 0 }}>Score: <b style={{ color: "#0f172a" }}>{d.score}</b> · Arousal: <b style={{ color: "#0f172a" }}>{d.arousal}</b></p>
                           </div>

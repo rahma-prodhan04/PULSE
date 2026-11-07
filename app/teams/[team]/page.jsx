@@ -11,6 +11,7 @@ import {
 import LoadingAnimation from "../../LoadingAnimation";
 import ExportButton from "../../ExportButton";
 import Sidebar from "../../Sidebar";
+import { getWeekNumber } from "../../../lib/cohortUtils";
 import { IconInfo, IconInbox, IconTrendingUp, IconClock, IconTrophy, IconAlertTriangle, IconUsers, IconBriefcase, IconZap, IconHeart, IconTarget, IconBarChart } from "../../icons";
 
 function ydY(x) {
@@ -29,12 +30,6 @@ function getDimColor(v) {
 function avg(arr) {
   if (!arr.length) return 0;
   return parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2));
-}
-function getWeekNumber(dateStr, programStartStr = "2026-06-01") {
-  const programStart = new Date(programStartStr);
-  const current = new Date(dateStr);
-  const diff = Math.round((current - programStart) / (7 * 24 * 60 * 60 * 1000));
-  return diff + 3;
 }
 
 const curveData = Array.from({ length: 101 }, (_, i) => ({
@@ -99,7 +94,7 @@ export default function TeamView() {
         const overall = avg([workload, energy, recovery, motivation, social]);
         const arousal = avg([workload, energy, recovery, motivation]);
         return {
-          week, label: `W${getWeekNumber(week, selectedCohort?.start_date)}`,
+          week, label: `W${getWeekNumber(week, selectedCohort)}`,
           workload, energy, recovery, motivation, social,
           overall, arousal, g: overall, perf: ydY(arousal),
           responses: dims.workload.length,
@@ -122,7 +117,7 @@ export default function TeamView() {
       setLoading(false);
     }
     if (teamName && selectedCohortId) fetchData();
-  }, [teamName, selectedCohortId, selectedCohort?.start_date]);
+  }, [teamName, selectedCohortId, selectedCohort]);
 
   const latest = weeklyData[weeklyData.length - 1];
   const overallAvg = weeklyData.length ? avg(weeklyData.map(w => w.overall)) : 0;

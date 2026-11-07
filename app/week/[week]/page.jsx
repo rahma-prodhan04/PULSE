@@ -11,15 +11,8 @@ import {
 import LoadingAnimation from "../../LoadingAnimation";
 import ExportButton from "../../ExportButton";
 import Sidebar from "../../Sidebar";
+import { getWeekNumber } from "../../../lib/cohortUtils";
 import { IconInfo, IconInbox, IconTrendingUp, IconUsers, IconTrophy, IconAlertTriangle, IconBriefcase, IconZap, IconHeart, IconTarget, IconBarChart } from "../../icons";
-
-
-function getWeekNumber(dateStr, programStartStr = "2026-06-01") {
-  const programStart = new Date(programStartStr);
-  const current = new Date(dateStr);
-  const diff = Math.round((current - programStart) / (7 * 24 * 60 * 60 * 1000));
-  return diff + 3;
-}
 
 function ydY(x) {
   return 100 * Math.exp(-0.5 * Math.pow((x - 5) / 2.2, 2));
@@ -182,7 +175,7 @@ export default function WeekView() {
                   ← Overview
                 </button>
                 <span style={{ color: "#e2e8f0" }}>/</span>
-                <h1 style={{ fontSize: 24, fontWeight: 700, color: "#0f172a", margin: 0 }}>Week {getWeekNumber(week, selectedCohort?.start_date)}</h1>
+                <h1 style={{ fontSize: 24, fontWeight: 700, color: "#0f172a", margin: 0 }}>Week {getWeekNumber(week, selectedCohort)}</h1>
               </div>
               <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
                 {responses.length} responses · {teams.length} teams
@@ -199,7 +192,7 @@ export default function WeekView() {
               >
                 <option value="all">All weeks</option>
                 {weeks.map(w => (
-                  <option key={w} value={w}>Week {getWeekNumber(w, selectedCohort?.start_date)}</option>
+                  <option key={w} value={w}>Week {getWeekNumber(w, selectedCohort)}</option>
                 ))}
               </select>
               <ExportButton
@@ -210,7 +203,7 @@ export default function WeekView() {
                   responses,
                   trendData: [{ week, label: week, v: cohortAvg, g: cohortAvg }],
                 }}
-                filename={`PULSE_Dashboard_Week_${getWeekNumber(week, selectedCohort?.start_date)}.pdf`}
+                filename={`PULSE_Dashboard_Week_${getWeekNumber(week, selectedCohort)}.pdf`}
                 page2Chart="comparison"
               />
             </div>
@@ -253,7 +246,7 @@ export default function WeekView() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>
-                    Yerkes-Dodson Curve — Week {getWeekNumber(week, selectedCohort?.start_date)}
+                    Yerkes-Dodson Curve — Week {getWeekNumber(week, selectedCohort)}
                   </p>
                   <IconInfo size={13} style={{ color: "#94a3b8" }} title="Each dot is a team, positioned by arousal and overall score" />
                 </div>
