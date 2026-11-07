@@ -12,6 +12,7 @@ import LoadingAnimation from "../../LoadingAnimation";
 import ExportButton from "../../ExportButton";
 import Sidebar from "../../Sidebar";
 import { getWeekNumber } from "../../../lib/cohortUtils";
+import { IconInfo, IconInbox, IconTrendingUp, IconUsers, IconTrophy, IconAlertTriangle, IconBriefcase, IconZap, IconHeart, IconTarget, IconBarChart } from "../../icons";
 
 function ydY(x) {
   return 100 * Math.exp(-0.5 * Math.pow((x - 5) / 2.2, 2));
@@ -45,7 +46,7 @@ const curveData = Array.from({ length: 101 }, (_, i) => ({
   y: parseFloat(ydY(i / 10).toFixed(1)),
 }));
 
-const dimIcons = { Social: "👥", Workload: "💼", Energy: "⚡", Recovery: "❤️", Motivation: "🎯" };
+const dimIcons = { Social: IconUsers, Workload: IconBriefcase, Energy: IconZap, Recovery: IconHeart, Motivation: IconTarget };
 
 export default function WeekView() {
   const { week } = useParams();
@@ -101,7 +102,7 @@ export default function WeekView() {
           recovery = avg(dims.recovery), motivation = avg(dims.motivation), social = avg(dims.social);
         const overall = avg([workload, energy, recovery, motivation, social]);
         const arousal = avg([workload, energy, recovery, motivation]);
-        return { name, workload, energy, recovery, motivation, social, overall, arousal, g: overall, perf: ydY(arousal) };
+        return { name, workload, energy, recovery, motivation, social, overall, arousal, g: overall, perf: ydY(arousal), responseCount: dims.workload.length };
       }).sort((a, b) => b.overall - a.overall);
 
       setTeams(teamData);
@@ -139,9 +140,9 @@ export default function WeekView() {
 
   if (!loading && responses.length === 0) {
     return (
-      <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#f8fafc", fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#f8fafc" }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>📭</div>
+          <IconInbox size={40} strokeWidth={1.4} style={{ color: "#cbd5e1", marginBottom: 16 }} />
           <p style={{ fontSize: 16, fontWeight: 600, color: "#0f172a" }}>No data for this week</p>
           <p style={{ fontSize: 13, color: "#64748b", marginTop: 6 }}>Try a different week.</p>
           <button onClick={() => router.push("/")}
@@ -154,7 +155,7 @@ export default function WeekView() {
   }
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "#f8fafc", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", background: "#f8fafc", overflow: "hidden" }}>
 
       <Sidebar
         weeksCollected={weeks.length}
@@ -189,7 +190,7 @@ export default function WeekView() {
                   else router.push(`/week/${e.target.value}`);
                 }}
               >
-                <option value="all">📅 All weeks</option>
+                <option value="all">All weeks</option>
                 {weeks.map(w => (
                   <option key={w} value={w}>Week {getWeekNumber(w, selectedCohort)}</option>
                 ))}
@@ -215,12 +216,12 @@ export default function WeekView() {
           {/* Metric cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
             {[
-              { label: "WEEK AVG SCORE", value: cohortAvg.toFixed(1), suffix: " / 10", sub: "Across all dimensions", subColor: "#16a34a", iconBg: "#dcfce7", icon: "📈" },
-              { label: "TEAMS REPORTING", value: teams.length.toString(), sub: `${responses.length} total responses`, subColor: "#64748b", iconBg: "#dbeafe", icon: "👥" },
-              { label: "HIGHEST SCORE", value: teams[0]?.name || "—", sub: `${teams[0]?.overall ?? "—"} overall`, subColor: "#16a34a", iconBg: "#dcfce7", icon: "🏆" },
-              { label: "LOWEST SCORE", value: teams[teams.length - 1]?.name || "—", sub: `${teams[teams.length - 1]?.overall ?? "—"} overall`, subColor: "#dc2626", iconBg: "#fee2e2", icon: "⚠️" },
+              { label: "WEEK AVG SCORE", value: cohortAvg.toFixed(1), suffix: " / 10", sub: "Across all dimensions", subColor: "#16a34a", iconBg: "#dcfce7", iconColor: "#16a34a", icon: IconTrendingUp },
+              { label: "TEAMS REPORTING", value: teams.length.toString(), sub: `${responses.length} total responses`, subColor: "#64748b", iconBg: "#dbeafe", iconColor: "#2563eb", icon: IconUsers },
+              { label: "HIGHEST SCORE", value: teams[0]?.name || "—", sub: `${teams[0]?.overall ?? "—"} overall`, subColor: "#16a34a", iconBg: "#dcfce7", iconColor: "#16a34a", icon: IconTrophy },
+              { label: "LOWEST SCORE", value: teams[teams.length - 1]?.name || "—", sub: `${teams[teams.length - 1]?.overall ?? "—"} overall`, subColor: "#dc2626", iconBg: "#fee2e2", iconColor: "#dc2626", icon: IconAlertTriangle },
             ].map(m => (
-              <div key={m.label} style={{ background: "#fff", borderRadius: 12, padding: "16px 18px", border: "1px solid #e2e8f0" }}>
+              <div key={m.label} className="card" style={{ padding: "16px 18px" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
                   <div>
                     <p style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", letterSpacing: "0.07em", margin: "0 0 6px" }}>{m.label}</p>
@@ -229,8 +230,8 @@ export default function WeekView() {
                     </p>
                     <p style={{ fontSize: 12, color: m.subColor, margin: "5px 0 0" }}>{m.sub}</p>
                   </div>
-                  <div style={{ width: 40, height: 40, background: m.iconBg, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
-                    {m.icon}
+                  <div className="icon-badge" style={{ background: m.iconBg, color: m.iconColor }}>
+                    <m.icon size={19} strokeWidth={2} />
                   </div>
                 </div>
               </div>
@@ -241,13 +242,13 @@ export default function WeekView() {
           <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 16 }}>
 
             {/* Curve */}
-            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+            <div className="card" style={{ padding: "18px 20px", display: "flex", flexDirection: "column" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>
                     Yerkes-Dodson Curve — Week {getWeekNumber(week, selectedCohort)}
                   </p>
-                  <span style={{ fontSize: 12, color: "#94a3b8" }}>ⓘ</span>
+                  <IconInfo size={13} style={{ color: "#94a3b8" }} title="Each dot is a team, positioned by arousal and overall score" />
                 </div>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, padding: "0 20px" }}>
@@ -258,7 +259,8 @@ export default function WeekView() {
                   </div>
                 ))}
               </div>
-              <ResponsiveContainer width="100%" height={240}>
+              <div style={{ flex: 1, minHeight: 240 }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
                   <XAxis dataKey="x" type="number" domain={[0, 10]} tickCount={6} tick={{ fontSize: 11 }}
                     label={{ value: "Arousal level", position: "insideBottom", offset: -10, fontSize: 11, fill: "#94a3b8" }} />
@@ -270,11 +272,13 @@ export default function WeekView() {
                         <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
                           <p style={{ fontWeight: 600, margin: "0 0 2px", color: "#0f172a" }}>{d.name}</p>
                           <p style={{ color: "#64748b", margin: 0 }}>Score: <b style={{ color: "#0f172a" }}>{d.g}</b> · Arousal: <b style={{ color: "#0f172a" }}>{d.x}</b></p>
+                          <p style={{ color: "#94a3b8", margin: "3px 0 0", fontSize: 11 }}>{d.responseCount} {d.responseCount === 1 ? "response" : "responses"}</p>
                         </div>
                       );
                     }
                     return null;
                   }} />
+                  <ReferenceArea x1={0} x2={2} fill="#dc2626" fillOpacity={0.08} />
                   <ReferenceArea x1={0} x2={2} fill="#dc2626" fillOpacity={0.08} />
                   <ReferenceArea x1={2} x2={4} fill="#d97706" fillOpacity={0.08} />
                   <ReferenceArea x1={4} x2={6} fill="#16a34a" fillOpacity={0.12} />
@@ -290,7 +294,7 @@ export default function WeekView() {
                   <Scatter data={curveData.filter(d => d.x >= 6 && d.x <= 8)} line={{ stroke: "#d97706", strokeWidth: 2.5 }} shape={() => <></>} />
                   <Scatter data={curveData.filter(d => d.x >= 8)} line={{ stroke: "#dc2626", strokeWidth: 2.5 }} shape={() => <></>} />
                   <Scatter
-                    data={teams.map(t => ({ x: t.arousal, y: t.perf, name: t.name, g: t.g, color: getZoneColor(t.arousal) }))}
+                    data={teams.map(t => ({ x: t.arousal, y: t.perf, name: t.name, g: t.g, color: getZoneColor(t.arousal), responseCount: t.responseCount }))}
                     fill="#16a34a"
                     shape={(props) => {
                       return <circle cx={props.cx} cy={props.cy} r={7}
@@ -300,6 +304,7 @@ export default function WeekView() {
                   />
                 </ScatterChart>
               </ResponsiveContainer>
+              </div>
               <div style={{ display: "flex", gap: 20, marginTop: 4 }}>
                 {[["#16a34a", "Optimal (4 – 6)"], ["#d97706", "Caution (2 – 4, 6 – 8)"], ["#dc2626", "Risk (1 – 2, 9 – 10)"]].map(([c, l]) => (
                   <span key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#64748b" }}>
@@ -310,7 +315,7 @@ export default function WeekView() {
             </div>
 
             {/* Team scores */}
-            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+            <div className="card" style={{ padding: "18px 20px" }}>
               <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: "0 0 14px", textTransform: "uppercase" }}>Team Scores This Week</p>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {teams.map((t, i) => {
@@ -339,7 +344,7 @@ export default function WeekView() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 16 }}>
 
             {/* Dimensions */}
-            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+            <div className="card" style={{ padding: "18px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                 <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: 0, textTransform: "uppercase" }}>Dimensions</p>
                 <select
@@ -354,7 +359,7 @@ export default function WeekView() {
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {activeDimensions.map((d, i) => (
                   <div key={d.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: i < activeDimensions.length - 1 ? "1px solid #f1f5f9" : "none" }}>
-                    <span style={{ fontSize: 16, flexShrink: 0 }}>{dimIcons[d.label] || "📊"}</span>
+                    {(() => { const DimIcon = dimIcons[d.label] || IconBarChart; return <DimIcon size={15} strokeWidth={1.8} style={{ color: "#94a3b8", flexShrink: 0 }} />; })()}
                     <span style={{ fontSize: 13, color: "#374151", width: 80, flexShrink: 0 }}>{d.label}</span>
                     <div style={{ flex: 1, height: 6, background: "#f1f5f9", borderRadius: 3, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${(d.value / 10) * 100}%`, background: d.color, borderRadius: 3 }} />
@@ -366,7 +371,7 @@ export default function WeekView() {
             </div>
 
             {/* Bar chart */}
-            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", padding: "18px 20px" }}>
+            <div className="card" style={{ padding: "18px 20px" }}>
               <p style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.07em", margin: "0 0 14px", textTransform: "uppercase" }}>Team Score Comparison</p>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={barData} margin={{ top: 4, right: 8, bottom: 32, left: 0 }}>

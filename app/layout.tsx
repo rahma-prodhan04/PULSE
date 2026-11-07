@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pulse",
+  title: "Pulse — Culture Health Check",
   description: "Cohort wellness dashboard for intern program managers",
 };
 
